@@ -1,0 +1,31 @@
+AUDITORIA FINAL — SQM VERCEL + ASAAS
+Data: 10/09/2026
+
+CHECKS AUTOMATIZADOS
+[OK] Sintaxe dos arquivos api/*.js
+[OK] Sintaxe dos arquivos lib/*.js
+[OK] Sintaxe dos scripts inline do index.html
+[OK] Nenhuma referência /.netlify/functions encontrada no projeto
+[OK] Nenhum SQM_ADMIN_USER/SQM_ADMIN_PASSWORD hardcoded no frontend
+[OK] ASAAS_API_KEY não aparece no frontend
+[OK] Checkout não envia total confiado pelo navegador; envia somente IDs e quantidades
+[OK] Backend recalcula o total a partir do catálogo do Redis
+[OK] Produtos persistidos no Redis
+[OK] Pedidos persistidos no Redis
+[OK] Webhook Asaas com validação de token e idempotência
+[OK] Login administrativo por cookie HttpOnly assinado
+[OK] Endereço completo armazenado no pedido e exibido no painel
+[OK] Upload de imagens separado para Vercel Blob público
+
+LIMITAÇÕES QUE EXIGEM CONFIGURAÇÃO EXTERNA
+[CONFIG] ASAAS_API_KEY
+[CONFIG] UPSTASH_REDIS_REST_URL
+[CONFIG] UPSTASH_REDIS_REST_TOKEN
+[CONFIG] BLOB_READ_WRITE_TOKEN
+[CONFIG] ADMIN_USER
+[CONFIG] ADMIN_PASSWORD
+[CONFIG] ADMIN_SESSION_SECRET
+[CONFIG] ASAAS_WEBHOOK_TOKEN
+
+TESTE REAL DE PAGAMENTO
+Não foi executado nesta auditoria porque exigiria uma conta/chave Asaas do usuário. O código foi validado estruturalmente e contra a documentação oficial, mas uma cobrança real/sandbox só pode ser testada depois que as variáveis forem configuradas no projeto Vercel.

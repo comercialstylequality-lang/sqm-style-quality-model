@@ -1,0 +1,12 @@
+{
+  "name": "sqm-style-quality-model",
+  "version": "2.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.6.1",
+    "formidable": "^3.5.4"
+  }
+}
