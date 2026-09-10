@@ -14,8 +14,8 @@
 No projeto Vercel, abra Storage/Marketplace e instale uma integração Redis (por exemplo Upstash Redis). A Vercel informa que o antigo Vercel KV não está disponível para novos projetos e que Redis deve ser conectado pelo Marketplace.
 
 As variáveis esperadas são:
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
+- `KV_REST_API_URL`
+- `KV_REST_API_TOKEN`
 
 ### 2. Vercel Blob
 Crie um Blob Store **Public** para imagens dos produtos e conecte-o ao projeto. A variável `BLOB_READ_WRITE_TOKEN` será disponibilizada pelo Vercel.
