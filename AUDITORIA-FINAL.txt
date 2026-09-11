@@ -19,8 +19,8 @@ CHECKS AUTOMATIZADOS
 
 LIMITAÇÕES QUE EXIGEM CONFIGURAÇÃO EXTERNA
 [CONFIG] ASAAS_API_KEY
-[CONFIG] KV_REST_API_URL
-[CONFIG] KV_REST_API_TOKEN
+[CONFIG] UPSTASH_REDIS_REST_URL
+[CONFIG] UPSTASH_REDIS_REST_TOKEN
 [CONFIG] BLOB_READ_WRITE_TOKEN
 [CONFIG] ADMIN_USER
 [CONFIG] ADMIN_PASSWORD
@@ -29,3 +29,10 @@ LIMITAÇÕES QUE EXIGEM CONFIGURAÇÃO EXTERNA
 
 TESTE REAL DE PAGAMENTO
 Não foi executado nesta auditoria porque exigiria uma conta/chave Asaas do usuário. O código foi validado estruturalmente e contra a documentação oficial, mas uma cobrança real/sandbox só pode ser testada depois que as variáveis forem configuradas no projeto Vercel.
+
+
+ALTERAÇÕES DESTA VERSÃO
+- Pix: ASAAS_API_URL configurável + tentativas automáticas para obter QR Code/Copia e Cola.
+- Pedidos: itens comprados ficam identificados com nome, quantidade, preço, categoria e público.
+- Loja: filtros Masculino e Feminino para camisas.
+- Produtos: novo campo Modelo/Público (Masculino/Feminino/Unissex).
