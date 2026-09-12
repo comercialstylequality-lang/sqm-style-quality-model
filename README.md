@@ -64,7 +64,23 @@ O checkout valida estoque e preço no servidor. A baixa automática de estoque p
 ### 6. IA do Editor (Gemini)
 Configure também no Vercel:
 - `GEMINI_API_KEY`
-- `GEMINI_EDITOR_MODEL` (opcional; padrão: `gemini-3.8-flash`)
+- `GEMINI_EDITOR_MODEL` (opcional; padrão: `gemini-3.1-pro-preview`)
 
 A chave fica somente no servidor. O painel administrativo envia o HTML atual para `/api/editor-ai`; a chave nunca é colocada no HTML público. A API Gemini usa o endpoint `generateContent`.
 
+
+### Correções desta versão
+- Interface visual premium e responsiva, com melhorias no catálogo, área administrativa e editor.
+- Corrigido o carregamento do Editor: ele só tenta buscar a versão protegida depois da autenticação do administrador.
+- Após o login, o Editor é carregado novamente do servidor.
+- Corrigido o tratamento de erros da IA para exibir o erro retornado pela Gemini.
+- Gemini 3.1 Pro Preview configurado por padrão, com limite de 65.536 tokens.
+- A chave da Gemini permanece somente no servidor.
+
+### Auditoria de produção — correções adicionais
+- Editor: ao salvar, a versão é publicada no Redis e carregada publicamente por `/api/site-html` para todos os visitantes.
+- Estoque: reserva por chave Redis com `DECRBY` atômico, rollback em falhas e liberação em pagamento expirado/cancelado/estornado.
+- Checkout: `orderId` recebe trava idempotente para impedir processamento duplicado.
+- Login: limite de 10 tentativas por IP a cada 15 minutos.
+- Produtos: validação de tamanho, preço, estoque, IDs duplicados e URLs permitidas.
+- Asaas: se a cobrança for criada e o salvamento final falhar, o backend tenta cancelar a cobrança e liberar o estoque.
