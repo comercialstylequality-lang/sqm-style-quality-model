@@ -34,9 +34,8 @@ Não coloque esses valores no HTML.
 ### 4. Asaas
 Configure:
 - `ASAAS_API_KEY`
-- `ASAAS_API_URL` (produção: `https://api.asaas.com/v3`; Sandbox: `https://api-sandbox.asaas.com/v3`)
 
-Para produção, use a chave da conta de produção e `ASAAS_API_URL=https://api.asaas.com/v3`. Para testes, use a chave do Sandbox junto com `ASAAS_API_URL=https://api-sandbox.asaas.com/v3`. O checkout agora tenta obter o QR Pix novamente por alguns segundos caso o Asaas ainda esteja gerando o QR.
+Para produção, use a chave da conta de produção. Para testes, use a chave do Sandbox e adapte o endpoint do backend para o ambiente de Sandbox.
 
 ### 5. Webhook
 Depois do deploy, configure no Asaas uma URL pública:
@@ -62,10 +61,3 @@ Cliente -> `/api/checkout` -> servidor lê produtos do Redis -> servidor calcula
 
 ## Observação sobre estoque
 O checkout valida estoque e preço no servidor. A baixa automática de estoque pode ser adicionada posteriormente com uma operação atômica no banco/Redis; esta versão não baixa estoque para evitar condições de corrida em atualizações concorrentes.
-
-## Catálogo e pedidos
-
-- Camisas podem ser marcadas como **Masculino**, **Feminino** ou **Unissex** no painel.
-- A loja possui filtros **Masculino** e **Feminino** para as camisas.
-- O painel de pedidos mostra o nome e a quantidade de cada produto comprado.
-- O pedido salva um snapshot do nome, preço, custo, categoria e público do produto no momento da compra.

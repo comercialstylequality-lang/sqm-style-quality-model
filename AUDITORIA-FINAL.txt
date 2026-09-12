@@ -29,10 +29,3 @@ LIMITAÇÕES QUE EXIGEM CONFIGURAÇÃO EXTERNA
 
 TESTE REAL DE PAGAMENTO
 Não foi executado nesta auditoria porque exigiria uma conta/chave Asaas do usuário. O código foi validado estruturalmente e contra a documentação oficial, mas uma cobrança real/sandbox só pode ser testada depois que as variáveis forem configuradas no projeto Vercel.
-
-
-ALTERAÇÕES DESTA VERSÃO
-- Pix: ASAAS_API_URL configurável + tentativas automáticas para obter QR Code/Copia e Cola.
-- Pedidos: itens comprados ficam identificados com nome, quantidade, preço, categoria e público.
-- Loja: filtros Masculino e Feminino para camisas.
-- Produtos: novo campo Modelo/Público (Masculino/Feminino/Unissex).
