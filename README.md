@@ -61,3 +61,10 @@ Cliente -> `/api/checkout` -> servidor lê produtos do Redis -> servidor calcula
 
 ## Observação sobre estoque
 O checkout valida estoque e preço no servidor. A baixa automática de estoque pode ser adicionada posteriormente com uma operação atômica no banco/Redis; esta versão não baixa estoque para evitar condições de corrida em atualizações concorrentes.
+### 6. IA do Editor (Gemini)
+Configure também no Vercel:
+- `GEMINI_API_KEY`
+- `GEMINI_EDITOR_MODEL` (opcional; padrão: `gemini-3.8-flash`)
+
+A chave fica somente no servidor. O painel administrativo envia o HTML atual para `/api/editor-ai`; a chave nunca é colocada no HTML público. A API Gemini usa o endpoint `generateContent`.
+

@@ -124,7 +124,7 @@ footer p{color:#888;font-size:11px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:25px}
 .stat{background:#f5f5f2;padding:20px}.stat span{display:block;color:rgba(255,255,255,.72);font-size:9px;letter-spacing:1px}.stat strong{display:block;font-size:23px;margin-top:7px}
 .admin-table{width:100%;border-collapse:collapse;font-size:11px}.admin-orders-address{min-width:320px;max-width:520px;white-space:normal;line-height:1.5}.admin-table th,.admin-table td{padding:12px 8px;border-bottom:1px solid #eee;text-align:left}.admin-table th{font-size:9px;letter-spacing:1px}
-.login{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4000;align-items:center;justify-content:center;padding:20px}.login.open{display:flex}
+.login{display:none!important;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4000;align-items:center;justify-content:center;padding:20px}.login.open{display:flex!important}
 .login-box{background:#fff;width:min(400px,100%);padding:35px}.login-box h2{letter-spacing:3px;margin-bottom:25px}.login-box input{width:100%;padding:12px;border:1px solid #ddd;margin-bottom:10px}.login-box button{width:100%;padding:13px;background:#111;color:#fff;border:0;font-weight:bold}.error{color:#a00;font-size:11px;margin-top:10px}
 .checkout-box{max-width:760px;margin:auto}.checkout-box h2{letter-spacing:2px;margin-bottom:25px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.checkout-box input,.checkout-box select{width:100%;padding:12px;border:1px solid #ddd}.checkout-box .full{grid-column:1/-1}.notice{background:#f5f5f2;padding:14px;font-size:11px;color:#666;line-height:1.6;margin:18px 0}
 .mobile-menu{display:none}
@@ -414,7 +414,7 @@ footer p{color:#888;font-size:11px}
   </div>
 </div>
 
-<div class="login" id="loginModal">
+<div class="login" id="loginModal" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="login-box">
     <button class="modal-close" onclick="closeLogin()">×</button>
     <h2>ADMIN</h2>
@@ -495,7 +495,7 @@ footer p{color:#888;font-size:11px}
         <div class="field"><label>PREÇO SQM</label><input id="pPrice" type="number" step=".01" min="0"></div>
         <div class="field"><label>ESTOQUE</label><input id="pStock" type="number" min="0"></div>
         <div class="field"><label>STATUS</label><select id="pStatus"><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
-        <div class="field full"><label>FOTOS DO PRODUTO</label><input id="pImage" placeholder="URL da foto principal"><input type="file" id="pImageFiles" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple style="margin-top:8px"><small style="display:block;margin-top:5px;color:#777">Selecione uma ou várias fotos. Elas aparecem na prévia antes de salvar e são enviadas para o armazenamento público do site.</small><div id="sqmImageManager" style="margin-top:14px"></div><textarea id="pImages" placeholder="URLs adicionais — uma por linha" style="margin-top:10px;min-height:70px"></textarea><small style="display:block;margin-top:6px;color:#777">Opcional: URLs externas. Use o gerenciador acima para ordenar, definir a principal e remover fotos enviadas ao site.</small></div>
+        <div class="field full"><label>FOTOS DO PRODUTO</label><input id="pImage" placeholder="URL da foto principal"><input type="file" id="pImageFiles" accept="image/*" multiple style="margin-top:8px"><small style="display:block;margin-top:5px;color:#777">Você pode selecionar várias fotos do celular. Elas serão enviadas para o site. A primeira será a principal.</small><textarea id="pImages" placeholder="Outras fotos — uma URL por linha" style="margin-top:8px;min-height:90px"></textarea><small style="display:block;margin-top:6px;color:#777">A primeira é a foto principal. Adicione quantas fotos quiser, uma URL por linha.</small></div>
         <div class="field full"><label>DESCRIÇÃO</label><textarea id="pDescription"></textarea></div>
         <div class="field"><label>TAMANHOS (separe por vírgula)</label><input id="pSizes" placeholder="P,M,G,GG"></div>
         <div class="field"><label>CORES (separe por vírgula)</label><input id="pColors" placeholder="Preto,Branco"></div>
@@ -518,12 +518,13 @@ footer p{color:#888;font-size:11px}
       </div>
       <div class="editor-help">
         Edite o HTML diretamente abaixo. <b>Aplicar</b> atualiza a prévia.
-        <b>Salvar</b> guarda sua versão neste navegador. <b>Baixar HTML</b> gera um novo arquivo.
-        A prévia roda isolada em um iframe.
+        <b>Salvar</b> publica a versão no servidor para o painel administrativo. <b>IA</b> pode corrigir e melhorar o código.
+        <b>Baixar HTML</b> gera um novo arquivo. A prévia roda isolada em um iframe.
       </div>
       <div class="editor-toolbar">
         <button class="primary" onclick="applyManualEditor()">APLICAR</button>
-        <button onclick="saveManualEditor()">SALVAR</button>
+        <button onclick="askAIEditor()">🤖 IA</button>
+        <button onclick="saveManualEditor()">SALVAR NO SERVIDOR</button>
         <button onclick="downloadManualEditor()">BAIXAR HTML</button>
         <button onclick="resetManualEditor()">RESTAURAR VERSÃO INICIAL</button>
       </div>
@@ -554,7 +555,7 @@ const initialProducts=[
 {id:7,name:"Camiseta Básica Algodão Brasil 2026",cost:36.9,price:36.9,category:"clothing",newArrival:true,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-6241967020-camiseta-masculina-basica-algodo-brasil-copa-do-mundo-2026-_JM"}
 ];
 let products=initialProducts.map(p=>({...p}));
-let cart=JSON.parse(localStorage.getItem("sqm_cart")||"[]");
+let cart=[];
 let orders=[];
 let editingId=null;
 let adminAuthenticated=false;
@@ -578,7 +579,7 @@ async function syncProductsCloud(){
   }catch(e){console.warn("SQM catalog save",e)}
   return false;
 }
-function save(){localStorage.setItem("sqm_cart",JSON.stringify(cart))}
+function save(){ /* carrinho mantido apenas durante a sessão; catálogo/pedidos ficam no servidor */ }
 async function loadAdminOrders(){
   if(!adminAuthenticated){orders=[];return false;}
   try{const r=await fetch("/api/orders",{cache:"no-store"});const d=await r.json().catch(()=>({}));if(r.ok&&Array.isArray(d.orders)){orders=d.orders;return true;}if(r.status===401){adminAuthenticated=false;openLogin();}return false;}catch(e){console.warn("SQM orders",e);return false}
@@ -619,32 +620,95 @@ function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value='';document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';
-  sqmImageManagerInit(productImages(p));document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new');
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new')
 }
-let sqmImageItems=[];let sqmImageRemoved=[];
-function sqmImageManagerInit(urls=[]){sqmImageItems=[...new Set((Array.isArray(urls)?urls:[]).filter(Boolean))].map(url=>({kind:'url',url:String(url)}));sqmImageRemoved=[];const input=document.getElementById('pImageFiles');if(input)input.value='';sqmRenderImageManager()}
-function sqmEscapeAttr(v){return esc(String(v||'')).replace(/'/g,'&#39;')}
-function sqmRenderImageManager(){const box=document.getElementById('sqmImageManager');if(!box)return;if(!sqmImageItems.length){box.innerHTML='<div style="padding:18px;border:1px dashed #ccc;text-align:center;color:#777;font-size:12px">Nenhuma foto selecionada ainda.</div>';return}box.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">${sqmImageItems.map((item,i)=>{const src=item.kind==='url'?item.url:item.preview;return `<div style="position:relative;border:1px solid #ddd;background:#f7f7f7;padding:6px;border-radius:8px"><img src="${sqmEscapeAttr(src)}" style="width:100%;height:130px;object-fit:cover;border-radius:5px" onerror="this.style.opacity='.25';this.nextElementSibling.textContent='Imagem indisponível'"><div style="font-size:10px;color:#777;text-align:center;min-height:14px;padding:4px 0">${i===0?'★ PRINCIPAL':item.kind==='file'?'NOVA FOTO':'FOTO'}</div><div style="display:flex;gap:5px">${i!==0?`<button type="button" class="admin-mini" style="flex:1" onclick="sqmSetMainImage(${i})">PRINCIPAL</button>`:''}<button type="button" class="admin-mini" style="flex:1" onclick="sqmRemoveImage(${i})">REMOVER</button></div></div>`}).join('')}</div>`}
-function sqmSetMainImage(index){if(index<0||index>=sqmImageItems.length)return;const [item]=sqmImageItems.splice(index,1);sqmImageItems.unshift(item);sqmRenderImageManager()}
-function sqmRemoveImage(index){const item=sqmImageItems[index];if(!item)return;sqmImageItems.splice(index,1);if(item.kind==='url'&&item.url)sqmImageRemoved.push(item.url);if(item.kind==='file'&&item.preview)URL.revokeObjectURL(item.preview);sqmRenderImageManager()}
-function sqmAddSelectedFiles(){const input=document.getElementById('pImageFiles');if(!input?.files?.length)return;for(const file of [...input.files]){const type=(file.type||'').toLowerCase();if(!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(type)){toast('Formato não permitido: '+file.name);continue}if(file.size>10*1024*1024){toast('A imagem '+file.name+' ultrapassa 10 MB.');continue}sqmImageItems.push({kind:'file',file,preview:URL.createObjectURL(file)})}input.value='';sqmRenderImageManager()}
-function sqmSyncLegacyImageFields(){const urls=sqmImageItems.filter(x=>x.kind==='url').map(x=>x.url);const main=document.getElementById('pImage');if(main)main.value=urls[0]||'';const extra=document.getElementById('pImages');if(extra)extra.value=urls.slice(1).join('\n')}
-async function sqmUploadFile(file){const fd=new FormData();fd.append('file',file,file.name);const r=await fetch('/api/product-images',{method:'POST',body:fd,cache:'no-store'});const d=await r.json().catch(()=>({}));if(!r.ok||!d.url)throw new Error(d.error||'Falha no upload da imagem.');return d.url}
-async function sqmDeleteImages(urls){const clean=[...new Set((urls||[]).filter(Boolean))];if(!clean.length)return;try{const r=await fetch('/api/product-images-delete',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({urls:clean}),cache:'no-store'});if(!r.ok)console.warn('SQM image delete',await r.text())}catch(e){console.warn('SQM image delete',e)}}
+
+function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
+function openLogin(){
+  const modal=document.getElementById("loginModal");
+  if(!modal)return;
+  modal.classList.add("open");
+  modal.style.display="flex";
+  modal.setAttribute("aria-hidden","false");
+  document.body.classList.add("login-open");
+  setTimeout(()=>document.getElementById("loginUser")?.focus(),50);
+}
+function closeLogin(){
+  const modal=document.getElementById("loginModal");
+  if(!modal)return;
+  modal.classList.remove("open");
+  modal.style.display="none";
+  modal.setAttribute("aria-hidden","true");
+  document.body.classList.remove("login-open");
+}
+
+async function login(){
+  const error=document.getElementById("loginError"),user=document.getElementById("loginUser"),pass=document.getElementById("loginPass");
+  error.textContent="";
+  try{
+    const r=await fetch("/api/admin-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:user.value.trim(),password:pass.value})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.success)throw new Error(d.error||"Usuário ou senha incorretos.");
+    adminAuthenticated=true;closeLogin();document.getElementById("adminPanel").classList.add("active");document.getElementById("adminPanel").scrollIntoView({behavior:"smooth"});
+    await loadAdminOrders();await renderAdmin();switchAdminTab("overview");
+  }catch(e){error.textContent=e.message||"Não foi possível entrar.";}
+}
+async function logout(){
+  try{await fetch("/api/admin-logout",{method:"POST"});}catch{}
+  adminAuthenticated=false;orders=[];document.getElementById("adminPanel").classList.remove("active");document.getElementById("loginPass").value="";document.getElementById("loginError").textContent="";openLogin();
+}
+async function checkAdminLogin(){
+  try{const r=await fetch("/api/admin-session",{cache:"no-store"});const d=await r.json().catch(()=>({}));adminAuthenticated=!!d.authenticated;if(adminAuthenticated){closeLogin();document.getElementById("adminPanel").classList.add("active");await loadAdminOrders();}else{document.getElementById("adminPanel").classList.remove("active");}}
+  catch{adminAuthenticated=false;document.getElementById("adminPanel").classList.remove("active");}
+}
+function switchAdminTab(tab,btn){
+  const map={overview:"adminOverview",products:"adminProductsView",orders:"adminOrdersView",new:"adminNewProduct",editor:"adminEditorView"};
+  document.querySelectorAll(".admin-view").forEach(v=>v.classList.remove("active"));
+  document.querySelectorAll(".admin-tab").forEach(v=>v.classList.remove("active"));
+  const el=document.getElementById(map[tab]); if(el) el.classList.add("active");
+  if(btn) btn.classList.add("active");
+  else {const b=document.querySelector(`[data-admin-tab="${tab}"]`);if(b)b.classList.add("active")}
+  if(tab==="products") renderAdminProducts();
+  if(tab==="orders") renderAdminOrders();
+  if(tab==="overview") updateStats();
+  if(tab==="new") document.getElementById("productFormTitle").textContent=editingId?"EDITAR PRODUTO":"NOVO PRODUTO";
+}
+function clearProductForm(){
+  editingId=null;
+  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
+  document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;
+  document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
+}
+
+async function sqmReadSelectedImages(){
+  const input=document.getElementById("pImageFiles");if(!input||!input.files?.length)return [];
+  if(!adminAuthenticated){toast("Faça login no painel.");return []}
+  const out=[];
+  for(const file of [...input.files].filter(f=>f.type.startsWith("image/"))){
+    const fd=new FormData();fd.append("file",file);
+    try{const r=await fetch("/api/product-images",{method:"POST",body:fd});const d=await r.json().catch(()=>({}));if(!r.ok||!d.url)throw new Error(d.error||"Falha no upload");out.push(d.url);}catch(e){console.warn(e);toast(e.message||"Não foi possível enviar uma foto.");}
+  }
+  return out;
+}
 async function saveProduct(){
-  if(!adminAuthenticated){openLogin();return}const foundOriginal=editingId?products.find(x=>String(x.id)===String(editingId)):null;const original=foundOriginal?JSON.parse(JSON.stringify(foundOriginal)):null;const oldImages=foundOriginal?productImages(foundOriginal):[];const uploaded=[];
-  try{const files=sqmImageItems.filter(x=>x.kind==='file');for(let i=0;i<files.length;i++){toast(`Enviando foto ${i+1} de ${files.length}...`);const url=await sqmUploadFile(files[i].file);uploaded.push(url);const idx=sqmImageItems.indexOf(files[i]);if(idx>=0)sqmImageItems[idx]={kind:'url',url}}}catch(e){toast(e.message||'Não foi possível enviar as fotos.');await sqmDeleteImages(uploaded);return}
-  sqmSyncLegacyImageFields();const manualUrls=(document.getElementById('pImages')?.value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);const imageList=[document.getElementById('pImage')?.value.trim(),...manualUrls,...sqmImageItems.filter(x=>x.kind==='url').map(x=>x.url)].filter(Boolean);const uniqueImages=[...new Set(imageList)];
-  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:uniqueImages[0]||'',images:uniqueImages,description:pDescription.value.trim(),sizes:pSizes.value.split(',').map(x=>x.trim()).filter(Boolean),colors:pColors.value.split(',').map(x=>x.trim()).filter(Boolean),supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==='active'};
-  if(!data.name){toast('Informe o nome.');await sqmDeleteImages(uploaded);return}if(data.price<0||data.cost<0){toast('Preço e custo não podem ser negativos.');await sqmDeleteImages(uploaded);return}
-  if(editingId){const p=products.find(x=>String(x.id)===String(editingId));if(!p){toast('Produto não encontrado.');await sqmDeleteImages(uploaded);return}Object.assign(p,data)}else{data.id=Date.now();products.push(data)}
-  const synced=await syncProductsCloud();if(!synced){if(editingId&&original){const idx=products.findIndex(x=>String(x.id)===String(editingId));if(idx>=0)products[idx]=original}else products=products.filter(x=>String(x.id)!==String(data.id));await sqmDeleteImages(uploaded);toast('Não foi possível salvar o produto online.');return}
-  const finalSet=new Set(uniqueImages);const toDelete=[...new Set([...sqmImageRemoved,...oldImages.filter(url=>!finalSet.has(url))])];await sqmDeleteImages(toDelete);toast('Produto e fotos salvos para todos os visitantes.');clearProductForm();renderAll();
+  if(!adminAuthenticated){openLogin();return}
+  const uploadedImages=await sqmReadSelectedImages();
+  const imageList=[pImage.value.trim(),...(pImages.value||"").split(/\n+/).map(x=>x.trim()),...uploadedImages].filter(Boolean);
+  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:imageList[0]||"",images:imageList,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors:pColors.value.split(",").map(x=>x.trim()).filter(Boolean),supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
+  if(!data.name){toast("Informe o nome.");return}if(data.price<0||data.cost<0){toast("Preço e custo não podem ser negativos.");return}
+  if(editingId){const p=products.find(x=>String(x.id)===String(editingId));if(!p){toast("Produto não encontrado.");return}Object.assign(p,data);}else{data.id=Date.now();products.push(data)}
+  const synced=await syncProductsCloud();if(synced){toast("Produto salvo para todos os visitantes.");clearProductForm();renderAll();}else toast("Não foi possível salvar o produto online.");
 }
-async function deleteProduct(id){if(!adminAuthenticated){openLogin();return}const p=products.find(x=>String(x.id)===String(id));if(!p)return;if(!confirm('Excluir este produto e suas fotos enviadas ao site? Esta ação não pode ser desfeita.'))return;const previous=[...products];products=products.filter(x=>String(x.id)!==String(id));cart=cart.filter(x=>String(x.id)!==String(id));const synced=await syncProductsCloud();if(synced){await sqmDeleteImages(productImages(p));save();renderAll();toast('Produto e fotos excluídos para todos.')}else{products=previous;toast('Falha ao excluir online.')}}
-async function toggleProductStatus(id){if(!adminAuthenticated){openLogin();return}const p=products.find(x=>String(x.id)===String(id));if(!p)return;p.active=!p.active;const synced=await syncProductsCloud();if(synced){renderAll();toast(p.active?'Produto ativado.':'Produto desativado.')}else{p.active=!p.active;toast('Falha ao atualizar o produto.')}}
-function clearProductForm(){editingId=null;sqmImageItems.forEach(x=>{if(x.kind==='file'&&x.preview)URL.revokeObjectURL(x.preview)});sqmImageItems=[];sqmImageRemoved=[];["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;document.getElementById("productFormTitle").textContent="NOVO PRODUTO";sqmRenderImageManager()}
+async function deleteProduct(id){
+  if(!adminAuthenticated){openLogin();return}
+  if(!confirm("Excluir este produto? Esta ação não pode ser desfeita."))return;
+  products=products.filter(x=>String(x.id)!==String(id));cart=cart.filter(x=>String(x.id)!==String(id));
+  const synced=await syncProductsCloud();if(synced){save();renderAll();toast("Produto excluído para todos.");}else toast("Falha ao excluir online.");
+}
+async function toggleProductStatus(id){
+  if(!adminAuthenticated){openLogin();return}const p=products.find(x=>String(x.id)===String(id));if(!p)return;p.active=!p.active;
+  const synced=await syncProductsCloud();if(synced){renderAll();toast(p.active?"Produto ativado.":"Produto desativado.");}else{p.active=!p.active;toast("Falha ao atualizar o produto.");}
+}
 function renderAdminProducts(query=""){
   const body=document.getElementById("adminProducts");if(!body)return;
   const q=String(query||"").toLowerCase();const list=products.filter(p=>!q||p.name.toLowerCase().includes(q));
@@ -655,10 +719,14 @@ function renderAdminOrders(){
   body.innerHTML=orders.map(o=>{const c=o.customer||{};const address=[c.address,c.number,c.complement,c.cep,c.city,c.state].filter(Boolean).join(", ");return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`}).join("")||"<tr><td colspan='7'>Nenhum pedido registrado.</td></tr>";
 }
 const editorInitialHTML = document.documentElement.outerHTML;
-function initManualEditor(){
+async function initManualEditor(){
   const box=document.getElementById("manualEditorCode");
   if(!box)return;
-  box.value=localStorage.getItem("sqm_manual_html") || editorInitialHTML;
+  try{
+    const r=await fetch("/api/editor",{cache:"no-store"});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.html) box.value=d.html; else box.value=editorInitialHTML;
+  }catch(e){ box.value=editorInitialHTML; }
   updateManualPreview();
 }
 function updateManualPreview(){
@@ -669,16 +737,42 @@ function updateManualPreview(){
   const st=document.getElementById("editorStatus");if(st)st.textContent="PRÉVIA ATUALIZADA";
 }
 function applyManualEditor(){updateManualPreview();toast("Prévia atualizada.");}
-function saveManualEditor(){
+async function saveManualEditor(){
+  if(!adminAuthenticated){openLogin();return}
   const code=document.getElementById("manualEditorCode")?.value||"";
-  localStorage.setItem("sqm_manual_html",code);
-  updateManualPreview();toast("Versão salva neste navegador.");
+  if(!code.trim()){toast("O editor está vazio.");return}
+  try{
+    const r=await fetch("/api/editor",{method:"PUT",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({html:code})});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){adminAuthenticated=false;openLogin();return}
+    if(!r.ok||!d.ok)throw new Error(d.error||"Não foi possível salvar o editor.");
+    updateManualPreview();toast("Versão salva no servidor.");
+  }catch(e){toast(e.message||"Erro ao salvar o editor.")}
 }
-function resetManualEditor(){
-  if(!confirm("Restaurar o HTML inicial do editor?"))return;
-  localStorage.removeItem("sqm_manual_html");
-  const box=document.getElementById("manualEditorCode");if(box)box.value=editorInitialHTML;
-  updateManualPreview();toast("HTML inicial restaurado.");
+async function resetManualEditor(){
+  if(!confirm("Restaurar o HTML inicial do editor no servidor?"))return;
+  if(!adminAuthenticated){openLogin();return}
+  try{
+    const r=await fetch("/api/editor",{method:"DELETE",headers:{"Accept":"application/json"}});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok||!d.ok)throw new Error(d.error||"Não foi possível restaurar o editor.");
+    const box=document.getElementById("manualEditorCode");if(box)box.value=editorInitialHTML;
+    updateManualPreview();toast("HTML inicial restaurado no servidor.");
+  }catch(e){toast(e.message||"Erro ao restaurar o editor.")}
+}
+async function askAIEditor(){
+  if(!adminAuthenticated){openLogin();return}
+  const box=document.getElementById("manualEditorCode");if(!box)return;
+  const request=prompt("O que você quer que a IA altere no site?\n\nEx.: deixe a página inicial mais premium e corrija erros do layout.");
+  if(!request?.trim())return;
+  const st=document.getElementById("editorStatus");if(st)st.textContent="IA TRABALHANDO...";
+  try{
+    const r=await fetch("/api/editor-ai",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({instruction:request,html:box.value})});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401){adminAuthenticated=false;openLogin();return}
+    if(!r.ok||!d.html)throw new Error(d.error||"A IA não conseguiu gerar a alteração.");
+    box.value=d.html;updateManualPreview();toast("IA gerou uma nova versão. Revise e clique em SALVAR NO SERVIDOR.");
+  }catch(e){if(st)st.textContent="ERRO DA IA";toast(e.message||"Erro ao usar a IA.")}
 }
 function downloadManualEditor(){
   const code=document.getElementById("manualEditorCode")?.value||"";
@@ -706,7 +800,7 @@ async function submitOrder(event){
   try{
     const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({orderId,paymentMethod:payment,customer,items})});
     const data=await r.json().catch(()=>({}));if(!r.ok||!data.success)throw new Error(data.error||"Não foi possível criar o pagamento.");
-    closeModal("checkoutModal");localStorage.setItem("sqm_last_order_id",data.orderId);
+    closeModal("checkoutModal");
     if(payment==="PIX"){if(!data.pix?.payload)throw new Error("O Asaas não retornou o código Pix.");showPixPayment(data)}else{if(!data.invoiceUrl)throw new Error("O Asaas não retornou o link de pagamento.");window.location.href=data.invoiceUrl}
   }catch(e){toast(e.message||"Erro ao iniciar pagamento.")}finally{if(btn){btn.disabled=false;btn.textContent="FINALIZAR PEDIDO"}}
 }
@@ -754,6 +848,9 @@ function updateStats(){
 }
 async function renderAdmin(){renderAdminProducts(document.getElementById("adminProductSearch")?.value||"");renderAdminOrders();updateStats()}
 async function refreshAdmin(){if(adminAuthenticated){await loadAdminOrders();await renderAdmin();}}
+document.getElementById("loginModal")?.addEventListener("click",e=>{if(e.target.id==="loginModal")closeLogin()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("loginModal")?.classList.contains("open"))closeLogin()});
+document.querySelectorAll('[onclick="openLogin()"]')?.forEach(btn=>btn.addEventListener("click",e=>{e.preventDefault();openLogin()}));
 (async()=>{
   const cloud=await loadProductsCloud();
   renderAll();
