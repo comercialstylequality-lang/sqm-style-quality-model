@@ -762,17 +762,41 @@ function renderAdminOrders(){
     const address=[c.address,c.number,c.complement,c.cep,c.city,c.state].filter(Boolean).join(", ");
     const items=Array.isArray(o.items)&&o.items.length?o.items.map(it=>{
       const p=products.find(x=>String(x.id)===String(it.id));
-      const name=p?.name||it.name||(String("Produto #")+it.id);
-      return {name,size:it.size||"—",color:it.color||"—",qty:Number(it.quantity||it.qty||1)};
+      return {
+        name:p?.name||it.name||(String("Produto #")+it.id),
+        size:it.size||"—",
+        color:it.color||"—",
+        qty:Number(it.quantity??it.qty??1)
+      };
     }):[{name:"—",size:"—",color:"—",qty:"—"}];
-    // Mantém o mesmo padrão visual da tabela: cada item ocupa uma linha nas colunas correspondentes.
-    const itemCell=items.map(x=>`<div><strong>${esc(x.name)}</strong></div>`).join("");
+    // Cada informação fica na sua própria coluna, sem remover nenhuma informação original do pedido.
+    const itemCell=items.map(x=>`<div style="font-weight:700">${esc(x.name)}</div>`).join("");
     const sizeCell=items.map(x=>`<div>${esc(x.size)}</div>`).join("");
     const colorCell=items.map(x=>`<div>${esc(x.color)}</div>`).join("");
     const qtyCell=items.map(x=>`<div>${esc(x.qty)}</div>`).join("");
-    return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${itemCell}</td><td>${sizeCell}</td><td>${colorCell}</td><td>${qtyCell}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
+    return `<tr>
+      <td>${esc(o.id)}</td>
+      <td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td>
+      <td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td>
+      <td>${esc(address)}</td>
+      <td>${itemCell}</td>
+      <td>${sizeCell}</td>
+      <td>${colorCell}</td>
+      <td>${qtyCell}</td>
+      <td>${money(o.total)}</td>
+      <td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td>
+      <td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)">
+        <option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option>
+        <option ${o.status==='Pago'?'selected':''}>Pago</option>
+        <option ${o.status==='Processando'?'selected':''}>Processando</option>
+        <option ${o.status==='Enviado'?'selected':''}>Enviado</option>
+        <option ${o.status==='Entregue'?'selected':''}>Entregue</option>
+        <option ${o.status==='Cancelado'?'selected':''}>Cancelado</option>
+      </select></td>
+    </tr>`;
   }).join("")||"<tr><td colspan='11'>Nenhum pedido registrado.</td></tr>";
 }
+
 const editorInitialHTML = document.documentElement.outerHTML;
 async function initManualEditor(){
   const box=document.getElementById("manualEditorCode");
