@@ -538,6 +538,8 @@ footer{padding:55px clamp(18px,4vw,60px)}
         <div class="field full"><label>DESCRIÇÃO</label><textarea id="pDescription"></textarea></div>
         <div class="field"><label>TAMANHOS (separe por vírgula)</label><input id="pSizes" placeholder="P,M,G,GG"></div>
         <div class="field"><label>CORES (separe por vírgula)</label><input id="pColors" placeholder="Preto,Branco"></div>
+        <div class="field full"><label>FOTOS POR COR</label><textarea id="pColorImages" placeholder="Preto|URL-foto-preta-1,URL-foto-preta-2
+Branco|URL-foto-branca-1,URL-foto-branca-2" style="min-height:100px"></textarea><small style="display:block;margin-top:6px;color:#777">Uma cor por linha no formato: Cor|URL1,URL2,URL3. Ao clicar na cor, o cliente verá somente essas fotos. Se uma cor não tiver fotos cadastradas, serão usadas as fotos gerais do produto.</small></div>
         <div class="field"><label>REFERÊNCIA DO FORNECEDOR (ADMIN)</label><input id="pSupplier" placeholder="https://..."></div>
         <div class="field" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <label style="margin:0"><input id="pNew" type="checkbox"> New Arrival</label>
@@ -599,6 +601,9 @@ let orders=[];
 let editingId=null;
 let adminAuthenticated=false;
 function productImages(p){const a=Array.isArray(p.images)?p.images.filter(Boolean):[];if(!a.length&&p.image)a.push(p.image);return [...new Set(a)]}
+function productColorImages(p,color){const map=p?.colorImages&&typeof p.colorImages==="object"?p.colorImages:{};const imgs=Array.isArray(map[color])?map[color].filter(Boolean):[];return [...new Set(imgs)].length?[...new Set(imgs)]:productImages(p)}
+function parseColorImages(text){const out={};String(text||"").split(/\n+/).forEach(line=>{const parts=line.split("|");if(parts.length<2)return;const color=parts.shift().trim();const urls=parts.join("|").split(",").map(x=>x.trim()).filter(Boolean);if(color&&urls.length)out[color]=[...new Set(urls)]});return out}
+function formatColorImages(map){return Object.entries(map&&typeof map==="object"?map:{}).map(([color,urls])=>`${color}|${Array.isArray(urls)?urls.join(","):""}`).join("\n")}
 async function loadProductsCloud(){
   try{
     const r=await fetch("/api/products",{cache:"no-store"});
@@ -647,20 +652,22 @@ function renderCart(){const c=document.getElementById("cartItems");document.getE
 function toggleCart(){document.getElementById("cartDrawer").classList.toggle("open")}
 function viewProduct(id){
  const p=products.find(x=>x.id===id);if(!p)return; window.currentDetailProduct=p;
- const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]),imgs=productImages(p),main=imgs[0]||"";
+ const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]),imgs=productImages(p),main=imgs[0]||""; window.currentDetailProduct=p;
  document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.name)}</h2><div class="detail-price">${money(p.price)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${sizes.length?`<div class="option-title">ESCOLHA O TAMANHO</div><div class="options" data-option-group="size">${sizes.map(x=>`<button type="button" class="option" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this)">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map(x=>`<button type="button" class="option" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this)">${esc(x)}</button>`).join('')}</div>`:''}<div class="option-title">QUANTIDADE</div><div class="qty-large"><button onclick="detailQty(-1)">−</button><span id="detailQty">1</span><button onclick="detailQty(1)">+</button></div><div style="display:flex;gap:8px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div><p style="margin-top:20px;color:rgba(255,255,255,.72);font-size:11px">Disponibilidade: ${p.stock>0?p.stock+" unidade(s)":"estoque não informado"}</p></div></div>`;
  document.getElementById("productModal").classList.add("open");
 }
 
 function detailQty(delta){const el=document.getElementById("detailQty");if(!el)return;const p=window.currentDetailProduct;let q=Math.max(1,Number(el.textContent||1)+delta);if(p&&p.stock>0)q=Math.min(q,p.stock);el.textContent=q}
-function selectOption(btn){const group=btn.closest('.options');if(!group)return;group.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
+function selectOption(btn){const group=btn.closest('.options');if(!group)return;group.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));btn.classList.add('active');if(btn.dataset.optionType==="color")showColorImages(btn.dataset.optionValue)}
+function showColorImages(color){const p=window.currentDetailProduct;if(!p)return;const imgs=productColorImages(p,color);if(window.sqmSetSwipeImages)window.sqmSetSwipeImages(imgs,p.name);const main=document.getElementById("sqmSwipeMain");if(main&&imgs[0])main.src=imgs[0];const thumbs=document.querySelector('.multi-thumbs');if(thumbs){thumbs.innerHTML=imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhotoByList(${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('');thumbs.style.display=imgs.length>1?'flex':'none'}const count=document.querySelector('.multi-count');if(count)count.textContent=`${imgs.length} FOTOS • DESLIZE PARA TROCAR`}
+function selectProductPhotoByList(index){const p=window.currentDetailProduct;if(!p)return;const color=getDetailOptions().color;const imgs=productColorImages(p,color),src=imgs[index];if(!src)return;if(window.sqmSetSwipeIndex)window.sqmSetSwipeIndex(index);const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll('.multi-thumb').forEach((b,i)=>b.classList.toggle('active',i===index))}
 function getDetailOptions(){const root=document.getElementById('productDetail');return {size:root.querySelector('[data-option-type="size"].active')?.dataset.optionValue||'',color:root.querySelector('[data-option-type="color"].active')?.dataset.optionValue||''}}
 function addDetailToCart(id){const p=products.find(x=>String(x.id)===String(id));if(!p||!p.active)return;if(p.stock<=0){toast("Estoque ainda não informado.");return}const o=getDetailOptions();const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]);if(sizes.length&&!o.size){toast("Escolha o tamanho.");return}if(colors.length&&!o.color){toast("Escolha a cor.");return}const q=Math.max(1,Number(document.getElementById('detailQty')?.textContent||1)),key=String(id)+'|'+o.size+'|'+o.color,x=cart.find(i=>(i.key||String(i.id))===key);if(x)x.qty=Math.min(p.stock,x.qty+q);else cart.push({id:p.id,qty:Math.min(q,p.stock),size:o.size,color:o.color,key});save();renderCart();closeModal('productModal');document.getElementById('cartDrawer').classList.add('open');toast('Produto adicionado ao carrinho.')}
 function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new')
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pColorImages').value=formatColorImages(p.colorImages);document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new')
 }
 
 function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
@@ -715,7 +722,7 @@ function switchAdminTab(tab,btn){
 }
 function clearProductForm(){
   editingId=null;
-  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
+  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pColorImages","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
   document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;
   document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
 }
@@ -734,7 +741,7 @@ async function saveProduct(){
   if(!adminAuthenticated){openLogin();return}
   const uploadedImages=await sqmReadSelectedImages();
   const imageList=[pImage.value.trim(),...(pImages.value||"").split(/\n+/).map(x=>x.trim()),...uploadedImages].filter(Boolean);
-  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:imageList[0]||"",images:imageList,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors:pColors.value.split(",").map(x=>x.trim()).filter(Boolean),supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
+  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:imageList[0]||"",images:imageList,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors:pColors.value.split(",").map(x=>x.trim()).filter(Boolean),colorImages:parseColorImages(pColorImages.value),supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
   if(!data.name){toast("Informe o nome.");return}if(data.price<0||data.cost<0){toast("Preço e custo não podem ser negativos.");return}
   if(editingId){const p=products.find(x=>String(x.id)===String(editingId));if(!p){toast("Produto não encontrado.");return}Object.assign(p,data);}else{data.id=Date.now();products.push(data)}
   const synced=await syncProductsCloud();if(synced){toast("Produto salvo para todos os visitantes.");clearProductForm();renderAll();}else toast("Não foi possível salvar o produto online.");
@@ -958,6 +965,8 @@ document.querySelectorAll('[onclick="openLogin()"]')?.forEach(btn=>btn.addEventL
     const c=document.getElementById("sqmSwipeCounter");
     if(c)c.textContent=(sqmSwipeCurrent+1)+" / "+sqmSwipeImages.length;
   };
+  window.sqmSetSwipeImages=function(images,name){sqmSwipeImages=(images||[]).filter(Boolean);sqmSwipeCurrent=0;const img=document.getElementById("sqmSwipeMain");if(img&&sqmSwipeImages[0]){img.src=sqmSwipeImages[0];img.alt=name||"Produto"}const c=document.getElementById("sqmSwipeCounter");if(c)c.textContent=sqmSwipeImages.length?"1 / "+sqmSwipeImages.length:"";document.querySelectorAll(".sqm-swipe-dot").forEach((d,i)=>d.classList.toggle("active",i===0));};
+  window.sqmSetSwipeIndex=function(index){if(!sqmSwipeImages.length)return;sqmSwipeCurrent=Math.max(0,Math.min(Number(index)||0,sqmSwipeImages.length-1));const img=document.getElementById("sqmSwipeMain");if(img)img.src=sqmSwipeImages[sqmSwipeCurrent];const c=document.getElementById("sqmSwipeCounter");if(c)c.textContent=(sqmSwipeCurrent+1)+" / "+sqmSwipeImages.length;document.querySelectorAll(".sqm-swipe-dot").forEach((d,i)=>d.classList.toggle("active",i===sqmSwipeCurrent));};
 })();
 </script>
 
