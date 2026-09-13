@@ -538,8 +538,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
         <div class="field full"><label>DESCRIÇÃO</label><textarea id="pDescription"></textarea></div>
         <div class="field"><label>TAMANHOS (separe por vírgula)</label><input id="pSizes" placeholder="P,M,G,GG"></div>
         <div class="field"><label>CORES (separe por vírgula)</label><input id="pColors" placeholder="Preto,Branco"></div>
-        <div class="field full"><label>FOTOS POR COR</label><textarea id="pColorImages" placeholder="Preto|URL-foto-preta-1,URL-foto-preta-2
-Branco|URL-foto-branca-1,URL-foto-branca-2" style="min-height:100px"></textarea><small style="display:block;margin-top:6px;color:#777">Uma cor por linha no formato: Cor|URL1,URL2,URL3. Ao clicar na cor, o cliente verá somente essas fotos. Se uma cor não tiver fotos cadastradas, serão usadas as fotos gerais do produto.</small></div>
+        <div class="field full"><label>FOTOS POR COR</label><div id="colorPhotoRows"></div><button type="button" class="admin-btn light" onclick="addColorPhotoRow()" style="margin-top:8px">+ ADICIONAR FOTO POR COR</button><textarea id="pColorImages" style="display:none"></textarea><small style="display:block;margin-top:6px;color:#777">Escolha uma cor e cole a URL da foto. Você pode adicionar várias fotos para a mesma cor. Quando o cliente selecionar a cor, somente essas fotos serão mostradas.</small></div>
         <div class="field"><label>REFERÊNCIA DO FORNECEDOR (ADMIN)</label><input id="pSupplier" placeholder="https://..."></div>
         <div class="field" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <label style="margin:0"><input id="pNew" type="checkbox"> New Arrival</label>
@@ -604,6 +603,10 @@ function productImages(p){const a=Array.isArray(p.images)?p.images.filter(Boolea
 function productColorImages(p,color){const map=p?.colorImages&&typeof p.colorImages==="object"?p.colorImages:{};const imgs=Array.isArray(map[color])?map[color].filter(Boolean):[];return [...new Set(imgs)].length?[...new Set(imgs)]:productImages(p)}
 function parseColorImages(text){const out={};String(text||"").split(/\n+/).forEach(line=>{const parts=line.split("|");if(parts.length<2)return;const color=parts.shift().trim();const urls=parts.join("|").split(",").map(x=>x.trim()).filter(Boolean);if(color&&urls.length)out[color]=[...new Set(urls)]});return out}
 function formatColorImages(map){return Object.entries(map&&typeof map==="object"?map:{}).map(([color,urls])=>`${color}|${Array.isArray(urls)?urls.join(","):""}`).join("\n")}
+function refreshColorPhotoSelects(){document.querySelectorAll('.color-photo-select').forEach(sel=>{const current=sel.value;const colors=(document.getElementById('pColors')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);sel.innerHTML=colors.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(colors.includes(current))sel.value=current;});}
+function addColorPhotoRow(color='',url=''){const box=document.getElementById('colorPhotoRows');if(!box)return;const colors=(document.getElementById('pColors')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);const row=document.createElement('div');row.className='color-photo-row';row.style.cssText='display:grid;grid-template-columns:minmax(120px,.7fr) minmax(180px,1.8fr) auto;gap:8px;margin:8px 0;align-items:center';row.innerHTML=`<select class="color-photo-select" style="padding:10px;border:1px solid #ddd;border-radius:8px">${colors.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select><input class="color-photo-url" placeholder="https://.../foto.jpg" value="${esc(url)}"><button type="button" class="admin-mini" onclick="this.closest('.color-photo-row').remove();syncColorPhotoTextarea()">REMOVER</button>`;box.appendChild(row);if(color&&colors.includes(color))row.querySelector('select').value=color;syncColorPhotoTextarea();}
+function syncColorPhotoTextarea(){const out={};document.querySelectorAll('.color-photo-row').forEach(row=>{const c=row.querySelector('.color-photo-select')?.value?.trim(),u=row.querySelector('.color-photo-url')?.value?.trim();if(c&&u)(out[c]??=[]).push(u)});const ta=document.getElementById('pColorImages');if(ta)ta.value=formatColorImages(out);}
+function loadColorPhotoRows(map){const box=document.getElementById('colorPhotoRows');if(!box)return;box.innerHTML='';const obj=map&&typeof map==='object'?map:{};Object.entries(obj).forEach(([c,urls])=>(Array.isArray(urls)?urls:[]).forEach(u=>addColorPhotoRow(c,u)));refreshColorPhotoSelects();syncColorPhotoTextarea();}
 async function loadProductsCloud(){
   try{
     const r=await fetch("/api/products",{cache:"no-store"});
@@ -667,7 +670,7 @@ function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pColorImages').value=formatColorImages(p.colorImages);document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new')
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pColorImages').value=formatColorImages(p.colorImages);loadColorPhotoRows(p.colorImages||{});document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';switchAdminTab('new')
 }
 
 function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
@@ -723,9 +726,13 @@ function switchAdminTab(tab,btn){
 function clearProductForm(){
   editingId=null;
   ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pColorImages","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
+  const cr=document.getElementById('colorPhotoRows');if(cr)cr.innerHTML='';
   document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;
   document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
 }
+
+document.addEventListener('input',e=>{if(e.target?.id==='pColors'){refreshColorPhotoSelects();syncColorPhotoTextarea()}if(e.target?.classList?.contains('color-photo-url'))syncColorPhotoTextarea()});
+document.addEventListener('change',e=>{if(e.target?.classList?.contains('color-photo-select'))syncColorPhotoTextarea()});
 
 async function sqmReadSelectedImages(){
   const input=document.getElementById("pImageFiles");if(!input||!input.files?.length)return [];
@@ -739,6 +746,7 @@ async function sqmReadSelectedImages(){
 }
 async function saveProduct(){
   if(!adminAuthenticated){openLogin();return}
+  syncColorPhotoTextarea();
   const uploadedImages=await sqmReadSelectedImages();
   const imageList=[pImage.value.trim(),...(pImages.value||"").split(/\n+/).map(x=>x.trim()),...uploadedImages].filter(Boolean);
   const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:imageList[0]||"",images:imageList,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors:pColors.value.split(",").map(x=>x.trim()).filter(Boolean),colorImages:parseColorImages(pColorImages.value),supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
