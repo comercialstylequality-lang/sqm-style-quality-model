@@ -516,7 +516,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITENS / TAMANHO / COR / QUANTIDADE</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
+          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITEM</th><th>TAMANHO</th><th>COR</th><th>QUANTIDADE</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
           <tbody id="adminOrders"></tbody>
         </table>
       </div>
@@ -765,19 +765,19 @@ function renderAdminProducts(query=""){
 }
 function renderAdminOrders(){
   const body=document.getElementById("adminOrders");if(!body)return;
-  if(!adminAuthenticated){body.innerHTML="<tr><td colspan='8'>Faça login para visualizar pedidos.</td></tr>";return}
+  if(!adminAuthenticated){body.innerHTML="<tr><td colspan='11'>Faça login para visualizar pedidos.</td></tr>";return}
   body.innerHTML=orders.map(o=>{
     const c=o.customer||{};
     const address=[c.address,c.number,c.complement,c.cep,c.city,c.state].filter(Boolean).join(", ");
-    const items=Array.isArray(o.items)?o.items.map(it=>{
+    const rows=Array.isArray(o.items)?o.items.map(it=>{
       const p=products.find(x=>String(x.id)===String(it.id));
       const name=p?.name||it.name||(String("Produto #")+it.id);
       const qty=Number(it.quantity||it.qty||1);
-      const variant=[it.size?String("Tamanho: ")+it.size:"",it.color?String("Cor: ")+it.color:""].filter(Boolean).join(" • ");
-      return `<div style="margin-bottom:10px"><strong>${esc(name)}</strong><br><small>Quantidade: ${qty}</small>${variant?`<br><small>${esc(variant)}</small>`:""}</div>`;
+      return `<div style="display:grid;grid-template-columns:minmax(180px,2fr) minmax(70px,1fr) minmax(90px,1fr) minmax(65px,.7fr);gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eee"><strong>${esc(name)}</strong><span>${esc(it.size||"—")}</span><span>${esc(it.color||"—")}</span><strong>${qty}</strong></div>`;
     }).join(""):"—";
-    return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${items}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
-  }).join("")||"<tr><td colspan='8'>Nenhum pedido registrado.</td></tr>";
+    const itemBox=`<div style="min-width:460px"><div style="display:grid;grid-template-columns:minmax(180px,2fr) minmax(70px,1fr) minmax(90px,1fr) minmax(65px,.7fr);gap:8px;font-size:9px;font-weight:800;letter-spacing:.06em;color:#777;padding-bottom:6px"><span>PRODUTO</span><span>TAMANHO</span><span>COR</span><span>QTD.</span></div>${rows}</div>`;
+    return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${itemBox}</td><td>${Array.isArray(o.items)?o.items.map(it=>esc(it.size||"—")).join("<br>"):"—"}</td><td>${Array.isArray(o.items)?o.items.map(it=>esc(it.color||"—")).join("<br>"):"—"}</td><td>${Array.isArray(o.items)?o.items.map(it=>Number(it.quantity||it.qty||1)).join("<br>"):"—"}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
+  }).join("")||"<tr><td colspan='11'>Nenhum pedido registrado.</td></tr>";
 }
 const editorInitialHTML = document.documentElement.outerHTML;
 async function initManualEditor(){
