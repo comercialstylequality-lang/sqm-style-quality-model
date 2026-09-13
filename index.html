@@ -599,8 +599,19 @@ let cart=[];
 let orders=[];
 let editingId=null;
 let adminAuthenticated=false;
-function productImages(p){const a=Array.isArray(p.images)?p.images.filter(Boolean):[];if(!a.length&&p.image)a.push(p.image);return [...new Set(a)]}
-function productColorImages(p,color){const map=p?.colorImages&&typeof p.colorImages==="object"?p.colorImages:{};const imgs=Array.isArray(map[color])?map[color].filter(Boolean):[];return [...new Set(imgs)]}
+function productImages(p){
+  const a=Array.isArray(p.images)?p.images.filter(Boolean):[];
+  const colorMap=p?.colorImages&&typeof p.colorImages==="object"?p.colorImages:{};
+  const colorImgs=Object.values(colorMap).flatMap(v=>Array.isArray(v)?v:[]).filter(Boolean);
+  const all=[...a,...colorImgs];
+  if(!all.length&&p.image)all.push(p.image);
+  return [...new Set(all)];
+}
+function productColorImages(p,color){
+  const map=p?.colorImages&&typeof p.colorImages==="object"?p.colorImages:{};
+  const imgs=Array.isArray(map[color])?map[color].filter(Boolean):[];
+  return [...new Set(imgs)];
+}
 function parseColorImages(text){const out={};String(text||"").split(/\n+/).forEach(line=>{const parts=line.split("|");if(parts.length<2)return;const color=parts.shift().trim();const urls=parts.join("|").split(",").map(x=>x.trim()).filter(Boolean);if(color&&urls.length)out[color]=[...new Set(urls)]});return out}
 function formatColorImages(map){return Object.entries(map&&typeof map==="object"?map:{}).map(([color,urls])=>`${color}|${Array.isArray(urls)?urls.join(","):""}`).join("\n")}
 function refreshColorPhotoSelects(){document.querySelectorAll('.color-photo-select').forEach(sel=>{const current=sel.value;const colors=(document.getElementById('pColors')?.value||'').split(',').map(x=>x.trim()).filter(Boolean);sel.innerHTML=colors.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(colors.includes(current))sel.value=current;});}
@@ -754,10 +765,14 @@ async function saveProduct(){
   const allImages=[...new Set(Object.values(colorMap).flat().filter(Boolean))];
   if(colors.length && colors.some(c=>!Array.isArray(colorMap[c])||!colorMap[c].length)){toast("Cadastre pelo menos 1 foto para cada cor.");return}
   if(!allImages.length){toast("Cadastre pelo menos 1 foto por cor.");return}
-  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:allImages[0]||"",images:allImages,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors,colorImages:colorMap,supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
+  const previous=editingId?products.find(x=>String(x.id)===String(editingId)):null;
+  const data={name:pName.value.trim(),category:pCategory.value,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:Math.max(0,Number(pStock.value||0)),image:allImages[0]||previous?.image||"",images:allImages,description:pDescription.value.trim(),sizes:pSizes.value.split(",").map(x=>x.trim()).filter(Boolean),colors,colorImages:colorMap,supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
   if(!data.name){toast("Informe o nome.");return}if(data.price<0||data.cost<0){toast("Preço e custo não podem ser negativos.");return}
   if(editingId){const p=products.find(x=>String(x.id)===String(editingId));if(!p){toast("Produto não encontrado.");return}Object.assign(p,data);}else{data.id=Date.now();products.push(data)}
-  const synced=await syncProductsCloud();if(synced){toast("Produto salvo para todos os visitantes.");clearProductForm();renderAll();}else toast("Não foi possível salvar o produto online.");
+  renderAll();
+  const synced=await syncProductsCloud();
+  if(synced){toast("Produto salvo para todos os visitantes.");clearProductForm();renderAll();}
+  else {toast("Salvo nesta sessão, mas não foi possível sincronizar online.");}
 }
 async function deleteProduct(id){
   if(!adminAuthenticated){openLogin();return}
