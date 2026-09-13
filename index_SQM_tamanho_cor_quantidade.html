@@ -516,7 +516,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITENS / TAMANHO / COR</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
+          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITENS / TAMANHO / COR / QUANTIDADE</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
           <tbody id="adminOrders"></tbody>
         </table>
       </div>
@@ -774,7 +774,7 @@ function renderAdminOrders(){
       const name=p?.name||it.name||(String("Produto #")+it.id);
       const qty=Number(it.quantity||it.qty||1);
       const variant=[it.size?String("Tamanho: ")+it.size:"",it.color?String("Cor: ")+it.color:""].filter(Boolean).join(" • ");
-      return `<div style="margin-bottom:8px"><strong>${esc(name)}</strong> × ${qty}${variant?`<br><small>${esc(variant)}</small>`:""}</div>`;
+      return `<div style="margin-bottom:10px"><strong>${esc(name)}</strong><br><small>Quantidade: ${qty}</small>${variant?`<br><small>${esc(variant)}</small>`:""}</div>`;
     }).join(""):"—";
     return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${items}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
   }).join("")||"<tr><td colspan='8'>Nenhum pedido registrado.</td></tr>";
