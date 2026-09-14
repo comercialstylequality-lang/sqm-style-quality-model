@@ -1,6 +1,10 @@
 function redisConfig(){
-  const url=process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token=process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url=process.env.KV_REST_API_URL
+    || process.env.UPSTASH_REDIS_REST_URL_KV_REST_API_URL
+    || process.env.UPSTASH_REDIS_REST_URL;
+  const token=process.env.KV_REST_API_TOKEN
+    || process.env.UPSTASH_REDIS_REST_URL_KV_REST_API_TOKEN
+    || process.env.UPSTASH_REDIS_REST_TOKEN;
   if(!url||!token) throw new Error('KV_REST_API_URL/KV_REST_API_TOKEN não configuradas.');
   return {url:url.replace(/\/$/,''),token};
 }
@@ -13,5 +17,4 @@ async function redis(command,args=[]){
 }
 async function getJson(key){const v=await redis('GET',[key]);return v?JSON.parse(v):null;}
 async function setJson(key,value){return redis('SET',[key,JSON.stringify(value)]);}
-async function del(key){return redis('DEL',[key]);}
-module.exports={redis,getJson,setJson,del};
+module.exports={redis,getJson,setJson};
