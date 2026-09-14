@@ -771,8 +771,8 @@ function renderAdminOrders(){
       const p=products.find(x=>String(x.id)===String(it.id));
       const name=p?.name||it.name||(String("Produto #")+it.id);
       const qty=Number(it.quantity||it.qty||1);
-      const size=it.size?String(it.size):"—";
-      const color=it.color?String(it.color):"—";
+      const size=(it.size||it.tamanho||(it.variant&&it.variant.size))?String(it.size||it.tamanho||it.variant.size):"—";
+      const color=(it.color||it.cor||(it.variant&&it.variant.color))?String(it.color||it.cor||it.variant.color):"—";
       rows.push(`<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${address}</td><td><strong>${esc(name)}</strong></td><td>${esc(size)}</td><td>${esc(color)}</td><td>${qty}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`);
     });
   });
