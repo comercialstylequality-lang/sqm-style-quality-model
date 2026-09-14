@@ -749,6 +749,9 @@ function addDetailToCart(id){
       tamanho:tamanho,
       color:cor,
       cor:cor,
+      variantKey:key,
+      variantLabel:optionLabel,
+      selectedVariant:{size:tamanho,tamanho,color:cor,cor},
       key
     });
   }
@@ -1067,7 +1070,10 @@ function checkoutItems(){
       optionLabel,
       description:optionLabel,
       selectedOptions:{size:tamanho,tamanho, color:cor,cor},
-      variant:{size:tamanho,tamanho, color:cor,cor}
+      variant:{size:tamanho,tamanho, color:cor,cor},
+      variantKey:String(x.variantKey||x.key||`${p.id}|${cor}|${tamanho}`),
+      variantLabel:optionLabel,
+      selectedVariant:{size:tamanho,tamanho,color:cor,cor}
     };
   }).filter(Boolean);
 }
