@@ -516,7 +516,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITEM</th><th>TAMANHO</th><th>COR</th><th>QUANTIDADE</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
+          <thead><tr><th>ORDER</th><th>DATA</th><th>CLIENTE</th><th>ENDEREÇO COMPLETO</th><th>ITENS / TAMANHO / COR</th><th>TOTAL</th><th>PAGAMENTO</th><th>STATUS</th></tr></thead>
           <tbody id="adminOrders"></tbody>
         </table>
       </div>
@@ -756,27 +756,19 @@ function renderAdminProducts(query=""){
 }
 function renderAdminOrders(){
   const body=document.getElementById("adminOrders");if(!body)return;
-  if(!adminAuthenticated){body.innerHTML="<tr><td colspan='11'>Faça login para visualizar pedidos.</td></tr>";return}
+  if(!adminAuthenticated){body.innerHTML="<tr><td colspan='8'>Faça login para visualizar pedidos.</td></tr>";return}
   body.innerHTML=orders.map(o=>{
     const c=o.customer||{};
     const address=[c.address,c.number,c.complement,c.cep,c.city,c.state].filter(Boolean).join(", ");
-    const items=Array.isArray(o.items)&&o.items.length?o.items.map(it=>{
+    const items=Array.isArray(o.items)?o.items.map(it=>{
       const p=products.find(x=>String(x.id)===String(it.id));
-      const rawName=String(it.name||"");
-      const sizeMatch=rawName.match(/\[TAMANHO:([^\]]+)\]/i);
-      const colorMatch=rawName.match(/\[COR:([^\]]+)\]/i);
-      const name=p?.name||it.productName||rawName.replace(/\s*\[TAMANHO:[^\]]+\]\s*\[COR:[^\]]+\]/ig,"")||(String("Produto #")+it.id);
-      const size=String(it.size||it.variant?.size||sizeMatch?.[1]||"").trim()||"—";
-      const color=String(it.color||it.variant?.color||colorMatch?.[1]||"").trim()||"—";
-      return {name,size,color,qty:Number(it.quantity||it.qty||1)};
-    }):[{name:"—",size:"—",color:"—",qty:"—"}];
-    // Mantém o mesmo padrão visual da tabela: cada item ocupa uma linha nas colunas correspondentes.
-    const itemCell=items.map(x=>`<div><strong>${esc(x.name)}</strong></div>`).join("");
-    const sizeCell=items.map(x=>`<div>${esc(x.size)}</div>`).join("");
-    const colorCell=items.map(x=>`<div>${esc(x.color)}</div>`).join("");
-    const qtyCell=items.map(x=>`<div>${esc(x.qty)}</div>`).join("");
-    return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${itemCell}</td><td>${sizeCell}</td><td>${colorCell}</td><td>${qtyCell}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
-  }).join("")||"<tr><td colspan='11'>Nenhum pedido registrado.</td></tr>";
+      const name=p?.name||it.name||(String("Produto #")+it.id);
+      const qty=Number(it.quantity||it.qty||1);
+      const variant=[it.size?String("Tamanho: ")+it.size:"",it.color?String("Cor: ")+it.color:""].filter(Boolean).join(" • ");
+      return `<div style="margin-bottom:8px"><strong>${esc(name)}</strong> × ${qty}${variant?`<br><small>${esc(variant)}</small>`:""}</div>`;
+    }).join(""):"—";
+    return `<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${esc(address)}</td><td>${items}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`;
+  }).join("")||"<tr><td colspan='8'>Nenhum pedido registrado.</td></tr>";
 }
 const editorInitialHTML = document.documentElement.outerHTML;
 async function initManualEditor(){
@@ -854,27 +846,7 @@ function openCheckout(){
 }
 
 function getCheckoutCustomer(){return {name:document.getElementById("coName").value.trim(),email:document.getElementById("coEmail").value.trim(),cpfCnpj:document.getElementById("coCpfCnpj").value.trim(),phone:document.getElementById("coPhone").value.trim(),cep:document.getElementById("coCep").value.trim(),address:document.getElementById("coAddress").value.trim(),number:document.getElementById("coNumber").value.trim(),complement:document.getElementById("coComplement").value.trim(),city:document.getElementById("coCity").value.trim(),state:document.getElementById("coState").value.trim()}}
-function checkoutItems(){return cart.map(x=>{
-  const p=products.find(i=>String(i.id)===String(x.id));
-  if(!p)return null;
-  const quantity=Math.max(1,Math.floor(Number(x.qty)||1));
-  const size=String(x.size||"");
-  const color=String(x.color||"");
-  // Inclui tamanho/cor também no nome enviado ao servidor como fallback.
-  // Assim, mesmo que o endpoint antigo do Vercel descarte campos extras do item,
-  // o pedido continua carregando exatamente a seleção feita pelo cliente.
-  const selectionTag=` [TAMANHO:${size||"—"}] [COR:${color||"—"}]`;
-  return {
-    id:p.id,
-    name:(p.name||"")+selectionTag,
-    productName:p.name||"",
-    price:Number(p.price||0),
-    quantity,
-    size,
-    color,
-    variant:{size,color}
-  };
-}).filter(Boolean)}
+function checkoutItems(){return cart.map(x=>({id:x.id,quantity:Math.max(1,Math.floor(Number(x.qty)||1)),size:x.size||"",color:x.color||""})).filter(x=>products.some(p=>String(p.id)===String(x.id)))}
 async function submitOrder(event){
   event.preventDefault();if(!cart.length){toast("Seu carrinho está vazio.");return}
   const form=event.currentTarget||event.target,btn=form.querySelector('button[type="submit"],button.checkout'),payment=document.getElementById("coPayment").value;
