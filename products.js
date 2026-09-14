@@ -1,151 +1,37 @@
-
-function json(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(body));
+const {requireAdmin}=require('../lib/auth');
+const {getJson,setJson}=require('../lib/redis');
+const INITIAL_PRODUCTS=[
+{id:1,name:'Camiseta Básica Tech Insider',cost:166.25,price:166.25,category:'clothing',newArrival:true,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-3193860320-camiseta-basica-tech-insider-masculina-_JM'},
+{id:2,name:'Camiseta Manga Longa Básica 100% Algodão',cost:31.15,price:31.15,category:'clothing',newArrival:false,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-4211231565-camiseta-manga-longa-masculina-basica-100-algodao-camisa-_JM'},
+{id:3,name:'Kit 6 Camisetas Básicas Masculinas',cost:138.13,price:138.13,category:'clothing',newArrival:false,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-2775895319-6-camiseta-basica-masculina-camisa-lisa-cores-algodao-_JM'},
+{id:4,name:'Camiseta Básica Lisa 100% Algodão Premium',cost:43.65,price:43.65,category:'clothing',newArrival:true,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-3673537813-camiseta-masculina-basica-lisa-100-algodao-premium-_JM'},
+{id:5,name:'Camiseta Básica Tech Modal Anti-Odor',cost:45,price:45,category:'clothing',newArrival:true,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-5167782652-camiseta-masculina-anti-odor-tech-modal-basica-no-amassa-_JM'},
+{id:6,name:'Camiseta Básica Canelada Tricot Modal',cost:69.9,price:69.9,category:'clothing',newArrival:false,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-4421548667-camiseta-masculina-basica-canelada-manga-curta-tricot-modal-_JM'},
+{id:7,name:'Camiseta Básica Algodão Brasil 2026',cost:36.9,price:36.9,category:'clothing',newArrival:true,featured:false,active:true,stock:0,image:'',description:'',sizes:[],colors:[],supplier:'https://produto.mercadolivre.com.br/MLB-6241967020-camiseta-masculina-basica-algodao-brasil-copa-do-mundo-2026-_JM'}
+];
+function cleanProducts(list){
+  if(!Array.isArray(list)) throw new Error('Lista de produtos inválida.');
+  return list.map((p,i)=>({
+    id:p.id??Date.now()+i,name:String(p.name||'').trim(),cost:Number(p.cost||0),price:Number(p.price||0),
+    category:p.category==='fragrance'?'fragrance':'clothing',newArrival:!!p.newArrival,featured:!!p.featured,
+    active:p.active!==false,stock:Math.max(0,Number(p.stock||0)),image:String(p.image||''),images:Array.isArray(p.images)?p.images.filter(Boolean).slice(0,20):[],
+    description:String(p.description||''),sizes:Array.isArray(p.sizes)?p.sizes.slice(0,20):[],colors:Array.isArray(p.colors)?p.colors.slice(0,20):[],supplier:String(p.supplier||'')
+  })).filter(p=>p.name && p.price>=0 && p.cost>=0);
 }
-
-function method(req) {
-  return String(req.method || "GET").toUpperCase();
-}
-
-async function readBody(req) {
-  if (req.body && typeof req.body === "object") return req.body;
-  let raw = "";
-  for await (const chunk of req) raw += chunk;
-  if (!raw) return {};
-  try { return JSON.parse(raw); } catch { throw new Error("JSON inválido."); }
-}
-
-function env(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Variável de ambiente ausente: ${name}`);
-  return value;
-}
-
-async function redisCommand(command) {
-  const url = env("UPSTASH_REDIS_REST_URL").replace(/\/+$/, "");
-  const token = env("UPSTASH_REDIS_REST_TOKEN");
-  const r = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(command)
-  });
-  const text = await r.text();
-  let data = {};
-  try { data = JSON.parse(text); } catch {}
-  if (!r.ok || data.error) {
-    throw new Error(data.error || `Redis HTTP ${r.status}`);
-  }
-  return data.result;
-}
-
-async function redisGet(key) {
-  const result = await redisCommand(["GET", key]);
-  return result == null ? null : result;
-}
-
-async function redisSet(key, value) {
-  return redisCommand(["SET", key, typeof value === "string" ? value : JSON.stringify(value)]);
-}
-
-async function redisDel(key) {
-  return redisCommand(["DEL", key]);
-}
-
-async function redisLRange(key, start=0, stop=-1) {
-  return redisCommand(["LRANGE", key, start, stop]);
-}
-
-async function redisRPush(key, value) {
-  return redisCommand(["RPUSH", key, typeof value === "string" ? value : JSON.stringify(value)]);
-}
-
-async function redisDecrBy(key, amount) {
-  return redisCommand(["DECRBY", key, amount]);
-}
-
-function parseJsonValue(value, fallback) {
-  if (value == null) return fallback;
-  if (typeof value !== "string") return value;
-  try { return JSON.parse(value); } catch { return fallback; }
-}
-
-function cookie(req, name) {
-  const raw = req.headers?.cookie || "";
-  const found = raw.split(";").map(x => x.trim()).find(x => x.startsWith(name + "="));
-  return found ? decodeURIComponent(found.slice(name.length + 1)) : "";
-}
-
-async function requireAdmin(req) {
-  // Compatible with the admin-session endpoint used by the SQM frontend.
-  // If SQM_ADMIN_SESSION_SECRET is configured, the cookie must match the
-  // SHA-256 HMAC-style session value generated by your login endpoint.
-  // For an existing deployment that already has /api/admin-session,
-  // set SQM_ADMIN_SESSION_KEY to the same server-side session key.
-  const session = cookie(req, "sqm_admin_session");
-  const expected = process.env.SQM_ADMIN_SESSION_KEY;
-  if (!session || !expected || session !== expected) {
-    const err = new Error("Não autorizado.");
-    err.statusCode = 401;
-    throw err;
-  }
-  return true;
-}
-
-function normalizeProduct(p) {
-  return {
-    ...p,
-    id: p.id ?? Date.now(),
-    name: String(p.name || "").trim(),
-    category: p.category || "clothing",
-    cost: Number(p.cost || 0),
-    price: Number(p.price || 0),
-    stock: Math.max(0, Math.floor(Number(p.stock || 0))),
-    image: p.image || "",
-    images: Array.isArray(p.images) ? p.images.filter(Boolean) : [],
-    sizes: Array.isArray(p.sizes) ? p.sizes.map(String).filter(Boolean) : [],
-    colors: Array.isArray(p.colors) ? p.colors.map(String).filter(Boolean) : [],
-    description: String(p.description || ""),
-    supplier: String(p.supplier || ""),
-    newArrival: !!p.newArrival,
-    featured: !!p.featured,
-    active: p.active !== false
-  };
-}
-
-module.exports = async function handler(req, res) {
-  try {
-    if (method(req) === "GET") {
-      let products = parseJsonValue(await redisGet("sqm:products"), []);
-      if (!Array.isArray(products)) products = [];
-      return json(res, 200, {products});
+module.exports=async function(req,res){
+  res.setHeader('Cache-Control','no-store');
+  try{
+    if(req.method==='GET'){
+      const products=await getJson('sqm:products');
+      return res.status(200).json({exists:true,products:products||INITIAL_PRODUCTS});
     }
-
-    await requireAdmin(req);
-
-    if (method(req) !== "PUT") return json(res, 405, {error:"Método não permitido."});
-
-    const body = await readBody(req);
-    if (!Array.isArray(body.products)) return json(res, 400, {error:"products deve ser um array."});
-
-    const products = body.products.map(normalizeProduct);
-    await redisSet("sqm:products", products);
-
-    // Initialize/align per-product stock keys for checkout reservation.
-    for (const p of products) {
-      const key = `sqm:stock:${p.id}`;
-      const existing = await redisGet(key);
-      if (existing == null) await redisSet(key, String(p.stock));
+    if(req.method==='PUT'){
+      if(!requireAdmin(req,res)) return;
+      const products=cleanProducts(req.body?.products);
+      await setJson('sqm:products',products);
+      return res.status(200).json({ok:true,products});
     }
-
-    return json(res, 200, {ok:true, products});
-  } catch (e) {
-    console.error("SQM products:", e);
-    return json(res, Number(e.statusCode || 500), {error:e.message || "Erro no catálogo."});
-  }
+    return res.status(405).json({error:'Método não permitido.'});
+  }catch(e){console.error(e);return res.status(500).json({error:e.message||'Erro no catálogo.'});}
 };
+module.exports.INITIAL_PRODUCTS=INITIAL_PRODUCTS;

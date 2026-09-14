@@ -10,7 +10,6 @@ async function asaas(path,options={}){
 }
 const digits=v=>String(v||'').replace(/\D/g,'');
 const round=v=>Math.round(Number(v)*100)/100;
-const text=v=>String(v==null?'':v).trim().slice(0,60);
 function paymentType(v){const x=String(v||'').toUpperCase();return x==='PIX'||x==='CREDIT_CARD'?x:null;}
 function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo'}).format(new Date());}
 async function saveOrder(order){await setJson(`sqm:order:${order.id}`,order);await redis('LPUSH',['sqm:orders',order.id]);}
@@ -34,10 +33,7 @@ module.exports=async function(req,res){
       const p=catalog.find(x=>String(x.id)===String(row.id)); const qty=Math.floor(Number(row.quantity));
       if(!p||!p.active||qty<1) return send(res,400,{success:false,error:'Um produto do carrinho não está disponível.'});
       if(Number(p.stock)>0 && qty>Number(p.stock)) return send(res,400,{success:false,error:`Estoque insuficiente para ${p.name}.`});
-      const size=text(row.size||row.tamanho||row.selectedSize);
-      const color=text(row.color||row.cor||row.selectedColor);
-      const variation=[size?`Tamanho: ${size}`:'',color?`Cor: ${color}`:''].filter(Boolean).join(' | ');
-      items.push({id:p.id,name:p.name,quantity:qty,value:round(p.price),cost:round(p.cost),size,color,variation,description:variation?`${p.description||'Produto SQM'} (${variation})`:(p.description||'Produto SQM')});
+      items.push({id:p.id,name:p.name,quantity:qty,value:round(p.price),cost:round(p.cost),description:p.description||'Produto SQM'});
     }
     const total=round(items.reduce((s,x)=>s+x.value*x.quantity,0));
     if(total<=0)return send(res,400,{success:false,error:'Valor do pedido inválido.'});
