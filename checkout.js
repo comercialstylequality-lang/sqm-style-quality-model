@@ -132,9 +132,6 @@ function isoDatePlusDays(days) {
 function normalizeItems(items) {
   if (!Array.isArray(items) || !items.length) throw new Error("Nenhum produto foi enviado.");
   return items.map(item => {
-    // Preserve the variant selected in the storefront all the way into Redis/Asaas.
-    // Also recover it from optionLabel/description for older carts that may only
-    // have sent the human-readable option text.
     const optionText = String(item.optionLabel ?? item.optionsLabel ?? item.description ?? item.descricao ?? "");
     let tamanho = String(item.tamanho ?? item.size ?? "").trim();
     let cor = String(item.cor ?? item.color ?? "").trim();
@@ -148,6 +145,8 @@ function normalizeItems(items) {
     }
     const quantity = Math.max(1, Math.floor(Number(item.quantity ?? item.qty) || 1));
     const price = Number(item.price ?? 0);
+    const variantKey = `${String(item.id)}|${cor}|${tamanho}`;
+    const variantLabel = [tamanho ? `Tamanho: ${tamanho}` : "", cor ? `Cor: ${cor}` : ""].filter(Boolean).join(" • ");
     return {
       id: item.id,
       name: String(item.name || "").trim(),
@@ -158,8 +157,10 @@ function normalizeItems(items) {
       size: tamanho,
       cor,
       color: cor,
-      optionLabel: String(item.optionLabel || [tamanho && `Tamanho: ${tamanho}`, cor && `Cor: ${cor}`].filter(Boolean).join(" • ")),
-      description: String(item.description || ""),
+      optionLabel: variantLabel || String(item.optionLabel || ""),
+      description: String(item.description || variantLabel || ""),
+      variantKey,
+      variantLabel,
       selectedOptions: {
         size: tamanho, tamanho,
         color: cor, cor
@@ -326,11 +327,29 @@ module.exports = async function handler(req, res) {
       pix = await asaas(`/payments/${encodeURIComponent(payment.id)}/pixQrCode`, {method:"GET"});
     }
 
+    // Redundant variant snapshot: the selected color/size is stored both inside
+    // each item and in a dedicated order-level structure. This means the admin
+    // panel can recover the variant even if another integration drops fields.
+    const variantSelections = items.map(item => ({
+      key: item.variantKey,
+      productId: item.id,
+      productName: item.name,
+      color: item.cor,
+      cor: item.cor,
+      size: item.size,
+      tamanho: item.tamanho,
+      quantity: item.quantity,
+      label: item.variantLabel
+    }));
+    const variantsByKey = Object.fromEntries(variantSelections.map(v => [v.key, v]));
+
     const order = {
       id: orderId,
       date: new Date().toISOString(),
       customer: {...customer, cpfCnpj},
       items,
+      variantSelections,
+      variantsByKey,
       total: Number(total.toFixed(2)),
       payment: paymentMethod,
       paymentStatus: payment.status || "PENDING",
@@ -343,6 +362,14 @@ module.exports = async function handler(req, res) {
 
     await redisRPush("sqm:pedidos", order);
     await redisSet(`sqm:order:${orderId}`, order);
+    // Second persistent copy dedicated only to variants. The admin side can use
+    // this if a payment provider or legacy order format ever omits the fields.
+    await redisSet(`sqm:order:${orderId}:variants`, {
+      orderId,
+      savedAt: new Date().toISOString(),
+      variantSelections,
+      variantsByKey
+    });
     await updateProductsAfterReservation(items, products);
 
     return json(res, 200, {
