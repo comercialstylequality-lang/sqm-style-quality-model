@@ -659,7 +659,48 @@ function viewProduct(id){
 function detailQty(delta){const el=document.getElementById("detailQty");if(!el)return;const p=window.currentDetailProduct;let q=Math.max(1,Number(el.textContent||1)+delta);if(p&&p.stock>0)q=Math.min(q,p.stock);el.textContent=q}
 function selectOption(btn){const group=btn.closest('.options');if(!group)return;group.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
 function getDetailOptions(){const root=document.getElementById('productDetail');return {size:root.querySelector('[data-option-type="size"].active')?.dataset.optionValue||'',color:root.querySelector('[data-option-type="color"].active')?.dataset.optionValue||''}}
-function addDetailToCart(id){const p=products.find(x=>String(x.id)===String(id));if(!p||!p.active)return;if(p.stock<=0){toast("Estoque ainda não informado.");return}const o=getDetailOptions();const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]);if(sizes.length&&!o.size){toast("Escolha o tamanho.");return}if(colors.length&&!o.color){toast("Escolha a cor.");return}const q=Math.max(1,Number(document.getElementById('detailQty')?.textContent||1)),key=String(id)+'|'+o.size+'|'+o.color,x=cart.find(i=>(i.key||String(i.id))===key);if(x)x.qty=Math.min(p.stock,x.qty+q);else cart.push({id:p.id,qty:Math.min(q,p.stock),size:o.size,color:o.color,key});save();renderCart();closeModal('productModal');document.getElementById('cartDrawer').classList.add('open');toast('Produto adicionado ao carrinho.')}
+function addDetailToCart(id){
+  const p=products.find(x=>String(x.id)===String(id));
+  if(!p||!p.active)return;
+  if(p.stock<=0){toast("Estoque ainda não informado.");return}
+
+  const o=getDetailOptions();
+  const tamanho=String(o.size||"").trim();
+  const cor=String(o.color||"").trim();
+  const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]);
+  const colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]);
+
+  if(sizes.length&&!tamanho){toast("Escolha o tamanho.");return}
+  if(colors.length&&!cor){toast("Escolha a cor.");return}
+
+  const q=Math.max(1,Number(document.getElementById('detailQty')?.textContent||1));
+  const key=String(id)+'|'+tamanho+'|'+cor;
+  const x=cart.find(i=>(i.key||String(i.id))===key);
+
+  if(x){
+    x.qty=Math.min(p.stock,x.qty+q);
+    x.size=tamanho;
+    x.tamanho=tamanho;
+    x.color=cor;
+    x.cor=cor;
+  }else{
+    cart.push({
+      id:p.id,
+      qty:Math.min(q,p.stock),
+      size:tamanho,
+      tamanho:tamanho,
+      color:cor,
+      cor:cor,
+      key
+    });
+  }
+
+  save();
+  renderCart();
+  closeModal('productModal');
+  document.getElementById('cartDrawer').classList.add('open');
+  toast('Produto adicionado ao carrinho.');
+}
 function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
@@ -864,11 +905,26 @@ function getCheckoutCustomer(){return {name:document.getElementById("coName").va
 function checkoutItems(){
   return cart.map(x=>{
     const p=products.find(item=>String(item.id)===String(x.id));
-    const size=String(x.size||x.tamanho||"");
-    const color=String(x.color||x.cor||"");
-    const optionLabel=[size?`Tamanho: ${size}`:"",color?`Cor: ${color}`:""].filter(Boolean).join(" • ");
-    return {id:x.id,name:p?.name||"",quantity:Math.max(1,Math.floor(Number(x.qty)||1)),size,tamanho:size,color,cor:color,optionLabel,description:optionLabel,selectedOptions:{size,tamanho:size,color,cor:color},variant:{size,tamanho:size,color,cor:color}};
-  }).filter(x=>products.some(p=>String(p.id)===String(x.id)));
+    if(!p)return null;
+
+    const tamanho=String(x.tamanho??x.size??"").trim();
+    const cor=String(x.cor??x.color??"").trim();
+    const optionLabel=[tamanho?`Tamanho: ${tamanho}`:"",cor?`Cor: ${cor}`:""].filter(Boolean).join(" • ");
+
+    return {
+      id:p.id,
+      name:p.name||"",
+      quantity:Math.max(1,Math.floor(Number(x.qty)||1)),
+      size:tamanho,
+      tamanho:tamanho,
+      color:cor,
+      cor:cor,
+      optionLabel,
+      description:optionLabel,
+      selectedOptions:{size:tamanho,tamanho, color:cor,cor},
+      variant:{size:tamanho,tamanho, color:cor,cor}
+    };
+  }).filter(Boolean);
 }
 async function submitOrder(event){
   event.preventDefault();if(!cart.length){toast("Seu carrinho está vazio.");return}
