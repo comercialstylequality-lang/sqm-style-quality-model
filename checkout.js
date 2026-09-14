@@ -1,47 +1,346 @@
-const {getJson,setJson,redis,del}=require('../lib/redis');
-const ASAAS_API_URL='https://api.asaas.com/v3';
-function send(res,status,data){return res.status(status).setHeader('Content-Type','application/json; charset=utf-8').json(data);}
-async function asaas(path,options={}){const key=process.env.ASAAS_API_KEY;if(!key)throw Object.assign(new Error('ASAAS_API_KEY não configurada no Vercel.'),{status:500});const r=await fetch(`${ASAAS_API_URL}${path}`,{...options,headers:{Accept:'application/json','Content-Type':'application/json',access_token:key,...(options.headers||{})}});const data=await r.json().catch(()=>({}));if(!r.ok){const msg=data?.errors?.map(x=>x.description).filter(Boolean).join('; ')||data?.error||`Asaas HTTP ${r.status}`;throw Object.assign(new Error(msg),{status:r.status});}return data;}
-const digits=v=>String(v||'').replace(/\D/g,''); const round=v=>Math.round(Number(v)*100)/100;
-function paymentType(v){const x=String(v||'').toUpperCase();return x==='PIX'||x==='CREDIT_CARD'?x:null;}
-function today(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo'}).format(new Date());}
-async function saveOrder(order){await setJson(`sqm:order:${order.id}`,order);await redis('LPUSH',['sqm:orders',order.id]);}
-async function reserveStock(items){const reserved=[];try{for(const item of items){const key=`sqm:stock:${item.id}`;await redis('SET',[key,String(item.stock),'NX']);const left=Number(await redis('DECRBY',[key,item.quantity]));if(!Number.isFinite(left)||left<0)throw new Error(`Estoque insuficiente para ${item.name}.`);reserved.push({...item,left});}return reserved;}catch(e){for(const item of reserved){try{await redis('INCRBY',[`sqm:stock:${item.id}`,item.quantity]);}catch(err){console.error('stock rollback',err);}}throw e;}}
-async function releaseStock(items){for(const item of (items||[])){try{await redis('INCRBY',[`sqm:stock:${item.id}`,item.quantity]);}catch(e){console.error('stock release',item.id,e);}}}
-module.exports=async function(req,res){
-  if(req.method!=='POST')return send(res,405,{success:false,error:'Método não permitido.'});
-  let reservation=[];let paymentId=null;let orderKey=null;
-  try{
-    const body=req.body||{},customer=body.customer||{},paymentMethod=paymentType(body.paymentMethod);
-    const orderId=String(body.orderId||`SQM-${Date.now()}`).trim().slice(0,100);orderKey=`sqm:checkout:${orderId}`;
-    const claimed=await redis('SET',[orderKey,'1','NX','EX',86400]);if(claimed!=='OK')return send(res,409,{success:false,error:'Este pedido já foi processado ou está em processamento. Gere um novo pedido.'});
-    const name=String(customer.name||'').trim(),email=String(customer.email||'').trim().toLowerCase(),cpfCnpj=digits(customer.cpfCnpj),phone=digits(customer.phone),cep=digits(customer.cep);
-    if(name.length<2||name.length>160)throw Object.assign(new Error('Informe um nome válido.'),{status:400});
-    if(!/^\S+@\S+\.\S+$/.test(email)||email.length>254)throw Object.assign(new Error('Informe um e-mail válido.'),{status:400});
-    if(![11,14].includes(cpfCnpj.length))throw Object.assign(new Error('CPF/CNPJ inválido.'),{status:400});
-    if(phone.length<10||phone.length>15)throw Object.assign(new Error('Telefone inválido.'),{status:400});
-    if(!paymentMethod)throw Object.assign(new Error('Forma de pagamento inválida.'),{status:400});
-    const requested=Array.isArray(body.items)?body.items:[];if(!requested.length||requested.length>50)throw Object.assign(new Error('Carrinho vazio ou inválido.'),{status:400});
-    const products=await getJson('sqm:products');const catalog=Array.isArray(products)?products:require('./products').INITIAL_PRODUCTS;const items=[];const ids=new Set();
-    for(const row of requested){const p=catalog.find(x=>String(x.id)===String(row.id));const qty=Math.floor(Number(row.quantity));if(!p||!p.active||ids.has(String(p.id))||qty<1||qty>100)throw Object.assign(new Error('Um produto do carrinho é inválido ou indisponível.'),{status:400});ids.add(String(p.id));
-      const color=String(row.color||row.selectedColor||row.cor||'').trim().slice(0,100);
-      const size=String(row.size||row.selectedSize||row.tamanho||'').trim().slice(0,100);
-      items.push({id:p.id,name:p.name,quantity:qty,value:round(p.price),cost:round(p.cost),stock:Math.max(0,Math.floor(Number(p.stock)||0)),description:p.description||'Produto SQM',color,size});}
-    const total=round(items.reduce((s,x)=>s+x.value*x.quantity,0));if(total<=0)throw Object.assign(new Error('Valor do pedido inválido.'),{status:400});
-    reservation=await reserveStock(items);
-    const order={id:orderId,date:new Date().toISOString(),status:'Pagamento pendente',paymentStatus:'Pendente',payment:paymentMethod,total,items,customer:{name,email,cpfCnpj,phone,cep,address:String(customer.address||'').trim().slice(0,240),number:String(customer.number||'').trim().slice(0,30),complement:String(customer.complement||'').trim().slice(0,160),city:String(customer.city||'').trim().slice(0,120),state:String(customer.state||'').trim().slice(0,80)},createdAt:new Date().toISOString(),stockReserved:true};
-    await saveOrder(order);
-    try{
-      const search=await asaas(`/customers?cpfCnpj=${encodeURIComponent(cpfCnpj)}&limit=1`,{method:'GET'});let asaasCustomer=Array.isArray(search.data)?search.data[0]:null;
-      const cp={name,cpfCnpj,email,mobilePhone:phone,postalCode:cep||undefined,address:order.customer.address||undefined,addressNumber:order.customer.number||undefined,complement:order.customer.complement||undefined,externalReference:orderId,notificationDisabled:false};Object.keys(cp).forEach(k=>cp[k]===undefined&&delete cp[k]);
-      if(!asaasCustomer)asaasCustomer=await asaas('/customers',{method:'POST',body:JSON.stringify(cp)});
-      const payment=await asaas('/payments',{method:'POST',body:JSON.stringify({customer:asaasCustomer.id,billingType:paymentMethod,value:total,dueDate:today(),description:`Pedido ${orderId} - SQM | ${items.map(i=>`${i.name} | Cor: ${i.color||'Não informada'} | Tamanho: ${i.size||'Não informado'} | Qtd: ${i.quantity}`).join(' || ')}`,externalReference:orderId})});paymentId=payment.id;
-      let pix=null;if(paymentMethod==='PIX'){const p=await asaas(`/payments/${encodeURIComponent(payment.id)}/pixQrCode`,{method:'GET'});pix={encodedImage:p.encodedImage||null,payload:p.payload||null,expirationDate:p.expirationDate||null};}
-      Object.assign(order,{asaasCustomerId:asaasCustomer.id,asaasPaymentId:payment.id,asaasInvoiceUrl:payment.invoiceUrl||null,status:'Aguardando pagamento',updatedAt:new Date().toISOString()});await setJson(`sqm:order:${orderId}`,order);
-      return send(res,200,{success:true,orderId,customerId:asaasCustomer.id,paymentId:payment.id,status:payment.status,billingType:payment.billingType,invoiceUrl:payment.invoiceUrl||null,pix});
-    }catch(e){
-      if(paymentId){try{await asaas(`/payments/${encodeURIComponent(paymentId)}`,{method:'DELETE'});}catch(err){console.error('Asaas compensation failed',err);}}
-      await releaseStock(reservation);order.stockReserved=false;order.status='Erro ao criar pagamento';order.error=e.message;order.updatedAt=new Date().toISOString();await setJson(`sqm:order:${orderId}`,order);throw e;
+
+function json(res, status, body) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(body));
+}
+
+function method(req) {
+  return String(req.method || "GET").toUpperCase();
+}
+
+async function readBody(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  let raw = "";
+  for await (const chunk of req) raw += chunk;
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { throw new Error("JSON inválido."); }
+}
+
+function env(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Variável de ambiente ausente: ${name}`);
+  return value;
+}
+
+async function redisCommand(command) {
+  const url = env("UPSTASH_REDIS_REST_URL").replace(/\/+$/, "");
+  const token = env("UPSTASH_REDIS_REST_TOKEN");
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(command)
+  });
+  const text = await r.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch {}
+  if (!r.ok || data.error) {
+    throw new Error(data.error || `Redis HTTP ${r.status}`);
+  }
+  return data.result;
+}
+
+async function redisGet(key) {
+  const result = await redisCommand(["GET", key]);
+  return result == null ? null : result;
+}
+
+async function redisSet(key, value) {
+  return redisCommand(["SET", key, typeof value === "string" ? value : JSON.stringify(value)]);
+}
+
+async function redisDel(key) {
+  return redisCommand(["DEL", key]);
+}
+
+async function redisLRange(key, start=0, stop=-1) {
+  return redisCommand(["LRANGE", key, start, stop]);
+}
+
+async function redisRPush(key, value) {
+  return redisCommand(["RPUSH", key, typeof value === "string" ? value : JSON.stringify(value)]);
+}
+
+async function redisDecrBy(key, amount) {
+  return redisCommand(["DECRBY", key, amount]);
+}
+
+function parseJsonValue(value, fallback) {
+  if (value == null) return fallback;
+  if (typeof value !== "string") return value;
+  try { return JSON.parse(value); } catch { return fallback; }
+}
+
+function cookie(req, name) {
+  const raw = req.headers?.cookie || "";
+  const found = raw.split(";").map(x => x.trim()).find(x => x.startsWith(name + "="));
+  return found ? decodeURIComponent(found.slice(name.length + 1)) : "";
+}
+
+async function requireAdmin(req) {
+  // Compatible with the admin-session endpoint used by the SQM frontend.
+  // If SQM_ADMIN_SESSION_SECRET is configured, the cookie must match the
+  // SHA-256 HMAC-style session value generated by your login endpoint.
+  // For an existing deployment that already has /api/admin-session,
+  // set SQM_ADMIN_SESSION_KEY to the same server-side session key.
+  const session = cookie(req, "sqm_admin_session");
+  const expected = process.env.SQM_ADMIN_SESSION_KEY;
+  if (!session || !expected || session !== expected) {
+    const err = new Error("Não autorizado.");
+    err.statusCode = 401;
+    throw err;
+  }
+  return true;
+}
+
+const ASAAS_BASE = (process.env.ASAAS_BASE_URL || "https://api.asaas.com/v3").replace(/\/+$/, "");
+
+async function asaas(path, options = {}) {
+  const key = env("ASAAS_API_KEY");
+  const r = await fetch(`${ASAAS_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "access_token": key,
+      ...(options.headers || {})
     }
-  }catch(e){if(!paymentId&&reservation.length){try{await releaseStock(reservation);}catch{}}if(orderKey){try{await del(orderKey);}catch{}}console.error('checkout',e);return send(res,Number(e.status)>=400&&Number(e.status)<600?e.status:500,{success:false,error:e.message||'Não foi possível criar o pagamento.'});}
+  });
+  const text = await r.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch {}
+  if (!r.ok) {
+    const detail = data.errors?.map(e => e.description).join(" | ") || data.message || `Asaas HTTP ${r.status}`;
+    throw new Error(detail);
+  }
+  return data;
+}
+
+function onlyDigits(v) {
+  return String(v || "").replace(/\D/g, "");
+}
+
+function isoDatePlusDays(days) {
+  const d = new Date(Date.now() + days * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+function normalizeItems(items) {
+  if (!Array.isArray(items) || !items.length) throw new Error("Nenhum produto foi enviado.");
+  return items.map(item => {
+    const tamanho = String(item.tamanho ?? item.size ?? "").trim();
+    const cor = String(item.cor ?? item.color ?? "").trim();
+    const quantity = Math.max(1, Math.floor(Number(item.quantity ?? item.qty) || 1));
+    const price = Number(item.price ?? 0);
+    return {
+      id: item.id,
+      name: String(item.name || "").trim(),
+      quantity,
+      price,
+      cost: Number(item.cost ?? 0),
+      tamanho,
+      size: tamanho,
+      cor,
+      color: cor,
+      optionLabel: String(item.optionLabel || [tamanho && `Tamanho: ${tamanho}`, cor && `Cor: ${cor}`].filter(Boolean).join(" • ")),
+      description: String(item.description || ""),
+      selectedOptions: {
+        size: tamanho, tamanho,
+        color: cor, cor
+      },
+      variant: {
+        size: tamanho, tamanho,
+        color: cor, cor
+      }
+    };
+  });
+}
+
+async function loadProducts() {
+  const raw = await redisGet("sqm:products");
+  return parseJsonValue(raw, []);
+}
+
+function totalFromProducts(items, products) {
+  return items.reduce((sum, item) => {
+    const p = products.find(x => String(x.id) === String(item.id));
+    if (!p) throw new Error(`Produto ${item.id} não encontrado.`);
+    if (p.active === false) throw new Error(`O produto "${p.name}" não está disponível.`);
+    const stock = Number(p.stock || 0);
+    if (stock < item.quantity) throw new Error(`Estoque insuficiente para "${p.name}".`);
+    const price = Number(p.price);
+    if (!Number.isFinite(price) || price < 0) throw new Error(`Preço inválido para "${p.name}".`);
+    item.name = p.name;
+    item.price = price;
+    item.cost = Number(p.cost || 0);
+    return sum + price * item.quantity;
+  }, 0);
+}
+
+async function reserveStock(items, products) {
+  // Transactionally decrement stock in Redis using a Lua script when available.
+  // This prevents two simultaneous checkouts from both consuming the same stock.
+  const url = env("UPSTASH_REDIS_REST_URL").replace(/\/+$/, "");
+  const token = env("UPSTASH_REDIS_REST_TOKEN");
+  const keys = [];
+  const args = [];
+  for (const item of items) {
+    const p = products.find(x => String(x.id) === String(item.id));
+    if (!p) throw new Error(`Produto ${item.id} não encontrado.`);
+    keys.push(`sqm:stock:${p.id}`);
+    args.push(item.quantity);
+  }
+  const lua = `
+    for i=1,#KEYS do
+      local s=redis.call('GET',KEYS[i])
+      if not s then return {0,i,'missing'} end
+      if tonumber(s) < tonumber(ARGV[i]) then return {0,i,'insufficient'} end
+    end
+    for i=1,#KEYS do
+      redis.call('DECRBY',KEYS[i],ARGV[i])
+    end
+    return {1}
+  `.trim();
+
+  const r = await fetch(`${url}/eval`, {
+    method: "POST",
+    headers: {"Authorization": `Bearer ${token}`, "Content-Type":"application/json"},
+    body: JSON.stringify([lua, keys.length, ...keys, ...args.map(String)])
+  });
+  const text = await r.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch {}
+  if (!r.ok || data.error) throw new Error(data.error || "Não foi possível reservar o estoque.");
+  const result = data.result;
+  if (!Array.isArray(result) || Number(result[0]) !== 1) {
+    const idx = Number(result?.[1] || 1) - 1;
+    const p = products[idx];
+    throw new Error(p ? `Estoque insuficiente para "${p.name}".` : "Estoque insuficiente.");
+  }
+}
+
+async function updateProductsAfterReservation(items, products) {
+  // Keep the product catalog's stock synchronized with the atomic Redis stock keys.
+  const updated = products.map(p => ({...p}));
+  for (const item of items) {
+    const p = updated.find(x => String(x.id) === String(item.id));
+    if (!p) continue;
+    p.stock = Math.max(0, Number(p.stock || 0) - item.quantity);
+  }
+  await redisSet("sqm:products", updated);
+  return updated;
+}
+
+module.exports = async function handler(req, res) {
+  if (method(req) !== "POST") return json(res, 405, {error:"Método não permitido."});
+
+  try {
+    const body = await readBody(req);
+    const orderId = String(body.orderId || `SQM-${Date.now()}`).trim();
+    const paymentMethod = String(body.paymentMethod || "").trim();
+    const customer = body.customer || {};
+    const cpfCnpj = onlyDigits(customer.cpfCnpj);
+
+    if (!customer.name || !customer.email || !cpfCnpj) {
+      return json(res, 400, {error:"Nome, e-mail e CPF/CNPJ são obrigatórios."});
+    }
+    if (![11,14].includes(cpfCnpj.length)) {
+      return json(res, 400, {error:"CPF ou CNPJ inválido."});
+    }
+
+    const items = normalizeItems(body.items);
+    const products = await loadProducts();
+    const total = totalFromProducts(items, products);
+
+    const reservedKey = `sqm:order:${orderId}:reserved`;
+    if (await redisGet(reservedKey)) {
+      const saved = parseJsonValue(await redisGet(`sqm:order:${orderId}`), null);
+      if (saved) return json(res, 200, {success:true, orderId, invoiceUrl:saved.invoiceUrl, pix:saved.pix});
+    }
+
+    await reserveStock(items, products);
+    await redisSet(reservedKey, "1");
+
+    const asaasCustomer = await asaas("/customers", {
+      method:"POST",
+      body: JSON.stringify({
+        name: String(customer.name),
+        email: String(customer.email),
+        cpfCnpj,
+        mobilePhone: onlyDigits(customer.phone),
+        postalCode: onlyDigits(customer.cep),
+        address: String(customer.address || ""),
+        addressNumber: String(customer.number || "S/N"),
+        complement: String(customer.complement || ""),
+        city: String(customer.city || ""),
+        state: String(customer.state || ""),
+        externalReference: orderId
+      })
+    });
+
+    const billingType = /pix/i.test(paymentMethod) ? "PIX" : "UNDEFINED";
+
+    // Envia tamanho e cor também para a descrição da cobrança no Asaas.
+    // Limite da descrição do Asaas: 500 caracteres.
+    const paymentDescription = [
+      `Pedido ${orderId}`,
+      ...items.map(item => {
+        const options = [
+          item.tamanho ? `Tamanho: ${item.tamanho}` : "",
+          item.cor ? `Cor: ${item.cor}` : ""
+        ].filter(Boolean).join(" • ");
+        return `${item.name || `Produto ${item.id}`}${options ? ` — ${options}` : ""} — Qtd: ${item.quantity}`;
+      })
+    ].join(" | ").slice(0, 500);
+
+    const payment = await asaas("/payments", {
+      method:"POST",
+      body: JSON.stringify({
+        customer: asaasCustomer.id,
+        billingType,
+        value: Number(total.toFixed(2)),
+        dueDate: isoDatePlusDays(1),
+        description: paymentDescription,
+        externalReference: orderId
+      })
+    });
+
+    let pix = null;
+    if (billingType === "PIX") {
+      pix = await asaas(`/payments/${encodeURIComponent(payment.id)}/pixQrCode`, {method:"GET"});
+    }
+
+    const order = {
+      id: orderId,
+      date: new Date().toISOString(),
+      customer: {...customer, cpfCnpj},
+      items,
+      total: Number(total.toFixed(2)),
+      payment: paymentMethod,
+      paymentStatus: payment.status || "PENDING",
+      status: "Aguardando pagamento",
+      asaasCustomerId: asaasCustomer.id,
+      asaasPaymentId: payment.id,
+      invoiceUrl: payment.invoiceUrl || "",
+      pix: pix || null
+    };
+
+    await redisRPush("sqm:pedidos", order);
+    await redisSet(`sqm:order:${orderId}`, order);
+    await updateProductsAfterReservation(items, products);
+
+    return json(res, 200, {
+      success:true,
+      orderId,
+      invoiceUrl: payment.invoiceUrl || "",
+      pix: pix || null
+    });
+  } catch (e) {
+    console.error("SQM checkout:", e);
+    return json(res, Number(e.statusCode || 500), {error:e.message || "Erro ao criar pedido."});
+  }
 };
