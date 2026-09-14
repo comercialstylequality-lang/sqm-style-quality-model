@@ -770,9 +770,16 @@ function renderAdminOrders(){
     items.forEach((it,index)=>{
       const p=products.find(x=>String(x.id)===String(it.id));
       const name=p?.name||it.name||(String("Produto #")+it.id);
-      const qty=Number(it.quantity||it.qty||1);
-      const size=(it.size||it.tamanho||(it.variant&&it.variant.size))?String(it.size||it.tamanho||it.variant.size):"—";
-      const color=(it.color||it.cor||(it.variant&&it.variant.color))?String(it.color||it.cor||it.variant.color):"—";
+      const qty=Math.max(1,Number(it.quantity||it.qty||1));
+      const rawVariant=it.variant||it.variacao||it.options||it.opcoes||{};
+      const selected=it.selectedOptions||it.selected_options||it.opcoesSelecionadas||{};
+      let size=it.size||it.tamanho||selected.size||selected.tamanho||rawVariant.size||rawVariant.tamanho||rawVariant.Size||rawVariant.Tamanho||"";
+      let color=it.color||it.cor||selected.color||selected.cor||rawVariant.color||rawVariant.cor||rawVariant.Color||rawVariant.Cor||"";
+      const optionText=String(it.optionLabel||it.optionsLabel||it.selectedOptions||it.selecao||it.description||it.descricao||"");
+      if(!size){const m=optionText.match(/(?:Tamanho|TAMANHO|size)\s*[:=]\s*([^•|,;\n]+)/i);if(m)size=m[1].trim();}
+      if(!color){const m=optionText.match(/(?:Cor|COR|color)\s*[:=]\s*([^•|,;\n]+)/i);if(m)color=m[1].trim();}
+      size=size?String(size):"—";
+      color=color?String(color):"—";
       rows.push(`<tr><td>${esc(o.id)}</td><td>${new Date(o.date||o.createdAt).toLocaleString("pt-BR")}</td><td>${esc(c.name||"")}<br><small>${esc(c.email||"")}<br>${esc(c.phone||"")}</small></td><td>${address}</td><td><strong>${esc(name)}</strong></td><td>${esc(size)}</td><td>${esc(color)}</td><td>${qty}</td><td>${money(o.total)}</td><td>${esc(o.payment||"")}<br>${esc(o.paymentStatus||"")}</td><td><select onchange="changeOrderStatus('${esc(o.id)}',this.value)"><option ${o.status==='Aguardando pagamento'?'selected':''}>Aguardando pagamento</option><option ${o.status==='Pago'?'selected':''}>Pago</option><option ${o.status==='Processando'?'selected':''}>Processando</option><option ${o.status==='Enviado'?'selected':''}>Enviado</option><option ${o.status==='Entregue'?'selected':''}>Entregue</option><option ${o.status==='Cancelado'?'selected':''}>Cancelado</option></select></td></tr>`);
     });
   });
@@ -857,8 +864,10 @@ function getCheckoutCustomer(){return {name:document.getElementById("coName").va
 function checkoutItems(){
   return cart.map(x=>{
     const p=products.find(item=>String(item.id)===String(x.id));
-    const size=String(x.size||""),color=String(x.color||"");
-    return {id:x.id,name:p?.name||"",quantity:Math.max(1,Math.floor(Number(x.qty)||1)),size,tamanho:size,color,cor:color,variant:{size,color}};
+    const size=String(x.size||x.tamanho||"");
+    const color=String(x.color||x.cor||"");
+    const optionLabel=[size?`Tamanho: ${size}`:"",color?`Cor: ${color}`:""].filter(Boolean).join(" • ");
+    return {id:x.id,name:p?.name||"",quantity:Math.max(1,Math.floor(Number(x.qty)||1)),size,tamanho:size,color,cor:color,optionLabel,description:optionLabel,selectedOptions:{size,tamanho:size,color,cor:color},variant:{size,tamanho:size,color,cor:color}};
   }).filter(x=>products.some(p=>String(p.id)===String(x.id)));
 }
 async function submitOrder(event){
