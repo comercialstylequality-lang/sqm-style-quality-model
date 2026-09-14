@@ -515,7 +515,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
-          <thead><tr><th>PRODUTO</th><th>STATUS</th><th>CATEGORIA</th><th>CUSTO</th><th>PREÇO</th><th>ESTOQUE</th><th>MARGEM</th><th>AÇÕES</th></tr></thead>
+          <thead><tr><th>PRODUTO</th><th>STATUS</th><th>CATEGORIA</th><th>TAMANHOS</th><th>CORES</th><th>ESCOLHAS DOS CLIENTES</th><th>CUSTO</th><th>PREÇO</th><th>ESTOQUE</th><th>MARGEM</th><th>AÇÕES</th></tr></thead>
           <tbody id="adminProducts"></tbody>
         </table>
       </div>
@@ -664,7 +664,7 @@ function restoreCart(){
 }
 async function loadAdminOrders(){
   if(!adminAuthenticated){orders=[];return false;}
-  try{const r=await sqmFetch("/api/orders",{cache:"no-store"});const d=await r.json().catch(()=>({}));if(r.ok&&Array.isArray(d.orders)){orders=d.orders;return true;}if(r.status===401){adminAuthenticated=false;openLogin();}return false;}catch(e){console.warn("SQM orders",e);return false}
+  try{const r=await sqmFetch("/api/orders",{cache:"no-store"});const d=await r.json().catch(()=>({}));if(r.ok&&Array.isArray(d.orders)){orders=d.orders;try{renderAdminProducts(document.getElementById("adminProductSearch")?.value||"")}catch{}return true;}if(r.status===401){adminAuthenticated=false;openLogin();}return false;}catch(e){console.warn("SQM orders",e);return false}
 }
 function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
@@ -687,10 +687,24 @@ function addToCart(id){viewProduct(id)}
 function changeQty(key,d){const x=cart.find(i=>(i.key||String(i.id))===String(key));const p=products.find(i=>i.id===x?.id);if(!x)return;x.qty+=d;if(x.qty<=0)cart=cart.filter(i=>(i.key||String(i.id))!==String(key));if(p&&x.qty>p.stock)x.qty=p.stock;save();renderCart()}
 function removeCart(key){cart=cart.filter(x=>(x.key||String(x.id))!==String(key));save();renderCart()}
 function renderCart(){const c=document.getElementById("cartItems");document.getElementById("cartCount").textContent=cart.reduce((a,x)=>a+x.qty,0);if(!cart.length){c.innerHTML="<p style='padding:25px 0;color:#777'>Seu carrinho está vazio.</p>";document.getElementById("cartTotal").textContent=money(0);return}let total=0;c.innerHTML=cart.map(x=>{const p=products.find(i=>String(i.id)===String(x.id));if(!p)return "";total+=p.price*x.qty;const thumb=productImages(p)[0]||"";return `<div class="cart-item"><div class="cart-thumb">${thumb?`<img src="${esc(thumb)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()">`:""}</div><div><h4>${esc(p.name)}</h4><small>${money(p.price)}${x.size?` • Tamanho: ${esc(x.size)}`:""}${x.color?` • Cor: ${esc(x.color)}`:""}</small><div class="qty"><button type="button" onclick="changeQty('${esc(x.key||String(p.id))}',-1)" aria-label="Diminuir quantidade">−</button><span>${x.qty}</span><button type="button" onclick="changeQty('${esc(x.key||String(p.id))}',1)" aria-label="Aumentar quantidade">+</button></div></div><button type="button" class="remove" onclick="removeCart('${esc(x.key||String(p.id))}')" aria-label="Remover produto">×</button></div>`}).join("");document.getElementById("cartTotal").textContent=money(total)}
+function isPerfumeProduct(p){const t=((p?.category||"")+" "+(p?.name||"")).toLowerCase();return /perfum|fragr|parfum|colônia|colonia|eau de/.test(t)}
+function variantSizes(p){if(p?.sizes?.length)return p.sizes;return isPerfumeProduct(p)?[]:["P","M","G","GG"]}
+function variantColors(p){if(p?.colors?.length)return p.colors;return isPerfumeProduct(p)?[]:["Preto","Branco"]}
+function productSoldVariants(p){
+  const out=new Map();
+  (Array.isArray(orders)?orders:[]).forEach(o=>{(Array.isArray(o.items)?o.items:[]).forEach(it=>{
+    if(String(it.id)!==String(p.id))return;
+    const size=orderItemValue(it,"size"),color=orderItemValue(it,"color");
+    if(size==="—"&&color==="—")return;
+    const key=size+" / "+color;
+    out.set(key,(out.get(key)||0)+Number(it.quantity||it.qty||1));
+  })});
+  return [...out.entries()].map(([k,v])=>k+" ("+v+")").join("<br>")||"—";
+}
 function toggleCart(){document.getElementById("cartDrawer").classList.toggle("open")}
 function viewProduct(id){
  const p=products.find(x=>x.id===id);if(!p)return; window.currentDetailProduct=p;
- const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]),imgs=productImages(p),main=imgs[0]||"";
+ const sizes=variantSizes(p),colors=variantColors(p),imgs=productImages(p),main=imgs[0]||"";
  document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.name)}</h2><div class="detail-price">${money(p.price)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${sizes.length?`<div class="option-title">ESCOLHA O TAMANHO</div><div class="options" data-option-group="size">${sizes.map(x=>`<button type="button" class="option" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this)">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map(x=>`<button type="button" class="option" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this)">${esc(x)}</button>`).join('')}</div>`:''}<div class="option-title">QUANTIDADE</div><div class="qty-large"><button onclick="detailQty(-1)">−</button><span id="detailQty">1</span><button onclick="detailQty(1)">+</button></div><div style="display:flex;gap:8px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div><p style="margin-top:20px;color:rgba(255,255,255,.72);font-size:11px">Disponibilidade: ${p.stock>0?p.stock+" unidade(s)":"estoque não informado"}</p></div></div>`;
  document.getElementById("productModal").classList.add("open");
 }
@@ -698,7 +712,7 @@ function viewProduct(id){
 function detailQty(delta){const el=document.getElementById("detailQty");if(!el)return;const p=window.currentDetailProduct;let q=Math.max(1,Number(el.textContent||1)+delta);if(p&&p.stock>0)q=Math.min(q,p.stock);el.textContent=q}
 function selectOption(btn){const group=btn.closest('.options');if(!group)return;group.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
 function getDetailOptions(){const root=document.getElementById('productDetail');return {size:root.querySelector('[data-option-type="size"].active')?.dataset.optionValue||'',color:root.querySelector('[data-option-type="color"].active')?.dataset.optionValue||''}}
-function addDetailToCart(id){const p=products.find(x=>String(x.id)===String(id));if(!p||!p.active)return;if(p.stock<=0){toast("Estoque ainda não informado.");return}const o=getDetailOptions();const sizes=p.sizes?.length?p.sizes:(p.category==="clothing"?["P","M","G","GG"]:[]),colors=p.colors?.length?p.colors:(p.category==="clothing"?["Preto","Branco"]:[]);if(sizes.length&&!o.size){toast("Escolha o tamanho.");return}if(colors.length&&!o.color){toast("Escolha a cor.");return}const q=Math.max(1,Number(document.getElementById('detailQty')?.textContent||1)),key=String(id)+'|'+o.size+'|'+o.color,x=cart.find(i=>(i.key||String(i.id))===key);if(x)x.qty=Math.min(p.stock,x.qty+q);else cart.push({id:p.id,qty:Math.min(q,p.stock),size:o.size,color:o.color,key});save();renderCart();closeModal('productModal');document.getElementById('cartDrawer').classList.add('open');toast('Produto adicionado ao carrinho.')}
+function addDetailToCart(id){const p=products.find(x=>String(x.id)===String(id));if(!p||!p.active)return;if(p.stock<=0){toast("Estoque ainda não informado.");return}const o=getDetailOptions();const sizes=variantSizes(p),colors=variantColors(p);if(sizes.length&&!o.size){toast("Escolha o tamanho.");return}if(colors.length&&!o.color){toast("Escolha a cor.");return}const q=Math.max(1,Number(document.getElementById('detailQty')?.textContent||1)),key=String(id)+'|'+o.size+'|'+o.color,x=cart.find(i=>(i.key||String(i.id))===key);if(x)x.qty=Math.min(p.stock,x.qty+q);else cart.push({id:p.id,qty:Math.min(q,p.stock),size:o.size,color:o.color,key});save();renderCart();closeModal('productModal');document.getElementById('cartDrawer').classList.add('open');toast('Produto adicionado ao carrinho.')}
 function buyNow(id){const before=cart.length;addDetailToCart(id);if(cart.length>before||cart.some(x=>String(x.id)===String(id)))openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
@@ -796,7 +810,7 @@ async function toggleProductStatus(id){
 function renderAdminProducts(query=""){
   const body=document.getElementById("adminProducts");if(!body)return;
   const q=String(query||"").toLowerCase();const list=products.filter(p=>!q||p.name.toLowerCase().includes(q));
-  body.innerHTML=list.map(p=>{const margin=p.price>0?((p.price-p.cost)/p.price*100):0;return `<tr><td>${esc(p.name)}</td><td>${p.active?"ATIVO":"INATIVO"}</td><td>${esc(p.category)}</td><td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td>${margin.toFixed(1)}%</td><td><button class="admin-mini" onclick="editProduct(${JSON.stringify(p.id)})">EDITAR</button> <button class="admin-mini" onclick="toggleProductStatus(${JSON.stringify(p.id)})">${p.active?"DESATIVAR":"ATIVAR"}</button> <button class="admin-mini" onclick="deleteProduct(${JSON.stringify(p.id)})">APAGAR</button></td></tr>`}).join("")||`<tr><td colspan="8">Nenhum produto encontrado.</td></tr>`;
+  body.innerHTML=list.map(p=>{const margin=p.price>0?((p.price-p.cost)/p.price*100):0;return `<tr><td>${esc(p.name)}</td><td>${p.active?"ATIVO":"INATIVO"}</td><td>${esc(p.category)}</td><td>${esc(variantSizes(p).join(", ")||"—")}</td><td>${esc(variantColors(p).join(", ")||"—")}</td><td>${productSoldVariants(p)}</td><td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td>${margin.toFixed(1)}%</td><td><button class="admin-mini" onclick="editProduct(${JSON.stringify(p.id)})">EDITAR</button> <button class="admin-mini" onclick="toggleProductStatus(${JSON.stringify(p.id)})">${p.active?"DESATIVAR":"ATIVAR"}</button> <button class="admin-mini" onclick="deleteProduct(${JSON.stringify(p.id)})">APAGAR</button></td></tr>`}).join("")||`<tr><td colspan="11">Nenhum produto encontrado.</td></tr>`;
 }
 function orderItemValue(item,type){
   const variation=item?.variation||item?.variant||item?.options||{};
