@@ -777,6 +777,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
         <div class="field"><label>PREÇO SQM</label><input id="pPrice" type="number" step=".01" min="0"></div>
         <div class="field"><label>ESTOQUE DO PRODUTO</label><input id="pStock" type="number" min="0" step="1" placeholder="Quantidade em estoque"><small style="display:block;margin-top:6px;color:#777">Estoque total do produto. Não é necessário informar tamanho.</small></div>
         <div class="field"><label>STATUS</label><select id="pStatus"><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
+        <div class="field full" id="pSizesField"><label>TAMANHOS DISPONÍVEIS <span style="color:#a00">*</span></label><div style="display:flex;gap:16px;flex-wrap:wrap;padding:11px 0"><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="P"> P</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="M"> M</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="G"> G</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="GG"> GG</label></div><small style="display:block;margin-top:4px;color:#777">Marque ao menos um tamanho. Obrigatório para produtos da categoria Clothing. O estoque acima é geral e vale para todos os tamanhos.</small></div>
         <div class="field full"><label>FOTOS DO PRODUTO</label><input id="pImage" placeholder="URL da foto principal"><input type="file" id="pImageFiles" accept="image/*" multiple style="margin-top:8px"><small style="display:block;margin-top:5px;color:#777">Você pode selecionar várias fotos do celular. Elas serão enviadas para o site. A primeira será a principal.</small><textarea id="pImages" placeholder="Outras fotos — uma URL por linha" style="margin-top:8px;min-height:90px"></textarea><small style="display:block;margin-top:6px;color:#777">A primeira é a foto principal. Adicione quantas fotos quiser, uma URL por linha.</small></div>
         <div class="field full"><label>DESCRIÇÃO</label><textarea id="pDescription"></textarea></div>
 
@@ -907,7 +908,7 @@ function getVariantStock(p,size,color){
   return Math.max(0,Number(p?.stock||0));
 }
 function getAvailableSizes(p){
-  return [];
+  return Array.isArray(p?.sizes)?[...new Set(p.sizes.map(x=>String(x).trim()).filter(Boolean))]:[];
 }
 function getAvailableColors(p,size=""){
   return Array.isArray(p?.colors)?[...new Set(p.colors.map(x=>String(x).trim()).filter(Boolean))]:[];
@@ -923,6 +924,17 @@ function refreshDetailColors(size){
   const colors=getAvailableColors(p);
   box.innerHTML=colors.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailAvailability()">${esc(x)}</button>`).join('');
 }
+function selectOption(btn){
+  if(!btn)return;
+  const group=btn.closest('[data-option-group]');
+  if(group)group.querySelectorAll('.option').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function getDetailOptions(){
+  const sizeBtn=document.querySelector('#productDetail [data-option-group="size"] .option.active');
+  const colorBtn=document.querySelector('#productDetail [data-option-group="color"] .option.active');
+  return{size:sizeBtn?sizeBtn.dataset.optionValue:'',color:colorBtn?colorBtn.dataset.optionValue:''};
+}
 function refreshDetailAvailability(){
   const p=window.currentDetailProduct;if(!p)return;
   const o=getDetailOptions();
@@ -936,8 +948,7 @@ function viewProduct(id){
  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
  try{ window.currentDetailProduct=p;
  const sizes=getAvailableSizes(p),colors=getAvailableColors(p,sizes[0]||""),imgs=productImages(p);
- document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><div class="eyebrow">${esc(p.category)}</div><h2>${esc(p.name)}</h2><div class="detail-price">${money(p.price)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${p.category==='clothing'&&sizes.length?`${renderVariantTabs(p)}<div class="option-title">ESCOLHA O TAMANHO</div>`:''}${sizes.length?`<div class="options" data-option-group="size">${sizes.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailColors(this.dataset.optionValue);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}<div class="option-title">QUANTIDADE</div><div class="qty-large"><button onclick="detailQty(-1)">−</button><span id="detailQty">1</span><button onclick="detailQty(1)">+</button></div><div style="display:flex;gap:8px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div><p id="detailAvailability" style="margin-top:20px;color:rgba(255,255,255,.72);font-size:11px"></p></div></div>`;
- if(sizes[0]){const tab=document.querySelector('#productDetail .variant-tab');if(tab)tab.classList.add('active');}
+ document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><h2>${esc(p.name)}</h2><div class="detail-price">${money(p.price)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${sizes.length?`<div class="option-title">ESCOLHA O TAMANHO</div><div class="options" data-option-group="size">${sizes.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailColors(this.dataset.optionValue);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}<span id="detailQty" style="display:none">1</span><div style="display:flex;gap:8px;margin-top:20px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div></div></div>`;
  refreshDetailAvailability();
  document.getElementById("productModal").classList.add("open");
  }catch(err){
@@ -966,7 +977,7 @@ function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';const _pSizes=Array.isArray(p.sizes)?p.sizes.map(x=>String(x).trim()):[];document.querySelectorAll('.pSizeOption').forEach(cb=>cb.checked=_pSizes.includes(cb.value));document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
 }
 
 function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
@@ -1023,6 +1034,8 @@ function updateCategoryFields(){
   // Estoque é único por produto. Não existe mais variação/estoque por tamanho.
   const stock=document.getElementById('pStock');
   if(stock) stock.required=false;
+  const sizesField=document.getElementById('pSizesField');
+  if(sizesField) sizesField.style.display=(document.getElementById('pCategory').value==='clothing')?'':'none';
 }
 function updatePublicSizeFilter(show){
   const wrap=document.getElementById('sizeFilterWrap');
@@ -1034,7 +1047,7 @@ function updatePublicSizeFilter(show){
 function clearProductForm(){
   editingId=null;
   ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
-  document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;
+  document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;document.querySelectorAll('.pSizeOption').forEach(cb=>cb.checked=false);
   updateCategoryFields();
   document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
 }
@@ -1051,9 +1064,11 @@ async function sqmReadSelectedImages(){
 }
 async function saveProduct(){
   if(!adminAuthenticated){openLogin();return}
+  const category=pCategory.value;
+  const selectedSizes=[...document.querySelectorAll('.pSizeOption:checked')].map(cb=>cb.value);
+  if(category==='clothing'&&!selectedSizes.length){toast('Selecione ao menos um tamanho (P, M, G ou GG).');switchAdminTab('new');const sf=document.getElementById('pSizesField');if(sf)sf.scrollIntoView({behavior:'smooth',block:'center'});return}
   const uploadedImages=await sqmReadSelectedImages();
   const imageList=[pImage.value.trim(),...(pImages.value||"").split(/\n+/).map(x=>x.trim()),...uploadedImages].filter(Boolean);
-  const category=pCategory.value;
   const stock=Math.max(0,Math.floor(Number(String(pStock.value||0).replace(',','.'))||0));
 
   const data={
@@ -1065,7 +1080,7 @@ async function saveProduct(){
     image:imageList[0]||"",
     images:imageList,
     description:pDescription.value.trim(),
-    sizes:[],
+    sizes:selectedSizes,
     colors:[],
     variants:[],
     supplier:pSupplier.value.trim(),
