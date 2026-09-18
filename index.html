@@ -775,17 +775,16 @@ footer{padding:55px clamp(18px,4vw,60px)}
         <div class="field"><label>CATEGORIA</label><select id="pCategory" onchange="updateCategoryFields()"><option value="clothing">Clothing</option><option value="fragrance">Fragrance</option></select></div>
         <div class="field"><label>CUSTO</label><input id="pCost" type="number" step=".01" min="0"></div>
         <div class="field"><label>PREÇO SQM</label><input id="pPrice" type="number" step=".01" min="0"></div>
-        <div class="field"><label>ESTOQUE</label><input id="pStock" type="number" min="0"></div>
+        <div class="field"><label>ESTOQUE</label><input id="pStock" type="number" min="0"><small id="sqm-stock-independent-note" style="display:block;margin-top:6px;color:#777;font-size:10px">O estoque é informado diretamente no produto, sem precisar cadastrar tamanho.</small></div>
         <div class="field"><label>STATUS</label><select id="pStatus"><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
         <div class="field full"><label>FOTOS DO PRODUTO</label><input id="pImage" placeholder="URL da foto principal"><input type="file" id="pImageFiles" accept="image/*" multiple style="margin-top:8px"><small style="display:block;margin-top:5px;color:#777">Você pode selecionar várias fotos do celular. Elas serão enviadas para o site. A primeira será a principal.</small><textarea id="pImages" placeholder="Outras fotos — uma URL por linha" style="margin-top:8px;min-height:90px"></textarea><small style="display:block;margin-top:6px;color:#777">A primeira é a foto principal. Adicione quantas fotos quiser, uma URL por linha.</small></div>
         <div class="field full"><label>DESCRIÇÃO</label><textarea id="pDescription"></textarea></div>
         <div class="field" id="clothingSizeField"><label>TAMANHO <span style="color:#a00">*</span></label><select id="pPrimarySize"><option value="">Selecione P, M, G ou GG</option><option value="P">P</option><option value="M">M</option><option value="G">G</option><option value="GG">GG</option></select><small style="display:block;margin-top:6px;color:#777">Obrigatório para Clothing. Fragrance não possui tamanho.</small></div>
-        <div class="field"><label>CORES (separe por vírgula)</label><input id="pColors" placeholder="Preto,Branco"></div>
         <input id="pSizes" type="hidden">
-        <div class="field full" id="variantField"><label>VARIAÇÕES POR TAMANHO / COR / ESTOQUE</label><textarea id="pVariants" placeholder="Uma por linha: P|Preto|10\nM|Preto|10
-M|Branco|5
-G|Preto|8
-GG|Preto|4"></textarea><small style="display:block;margin-top:6px;color:#777">Formato: TAMANHO|COR|ESTOQUE. Ex.: M|Preto|10. Cada combinação tem estoque próprio.</small></div>
+        <div class="field full" id="variantField"><label>VARIAÇÕES POR TAMANHO / ESTOQUE</label><textarea id="pVariants" placeholder="Uma por linha: P|10
+M|10
+G|8
+GG|4"></textarea><small style="display:block;margin-top:6px;color:#777">Formato: TAMANHO|ESTOQUE. Ex.: M|10. Cada tamanho tem estoque próprio.</small></div>
         <div class="field"><label>REFERÊNCIA DO FORNECEDOR (ADMIN)</label><input id="pSupplier" placeholder="https://..."></div>
         <div class="field" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <label style="margin:0"><input id="pNew" type="checkbox"> New Arrival</label>
@@ -876,7 +875,7 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
 function activeProducts(){return products.filter(p=>p.active)}
 function productCard(p){const mainImg=productImages(p)[0]||"";
-return `<article class="product sqm-clickable-product" data-product-id="${p.id}" role="button" tabindex="0" onclick="viewProduct(${p.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProduct(${p.id})}">${p.newArrival?'<span class="badge">NEW ARRIVAL</span>':''}<div class="product-image">${mainImg?`<img src="${esc(mainImg)}" alt="${esc(p.name)}">`:'<div class="placeholder">FOTO DO PRODUTO<br><small>Adicione uma imagem própria/licenciada no painel</small></div>'}</div><div class="product-info"><h3>${esc(p.name)}</h3><div class="price">${money(p.price)}</div><div class="product-buttons"><button class="view" onclick="event.stopPropagation();viewProduct(${p.id})">VIEW PRODUCT</button><button class="add" onclick="event.preventDefault();event.stopPropagation();addToCart(${p.id})">ADD TO CART</button></div></div></article>`
+return `<article class="product sqm-clickable-product" data-product-id="${p.id}" role="button" tabindex="0" onclick="viewProduct(${p.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProduct(${p.id})}">${p.newArrival?'<span class="badge">NEW ARRIVAL</span>':''}<div class="product-image">${mainImg?`<img src="${esc(mainImg)}" alt="${esc(p.name)}">`:'<div class="placeholder">FOTO DO PRODUTO<br><small>Adicione uma imagem própria/licenciada no painel</small></div>'}</div><div class="product-info"><h3>${esc(p.name)}</h3><div class="price">${money(p.price)}</div><div class="product-buttons"><button class="view" onclick="event.stopPropagation();viewProduct(${p.id})">VIEW PRODUCT</button><button class="add" onclick="event.stopPropagation();addToCart(${p.id})">ADD TO CART</button></div></div></article>`
 }
 function renderAll(){
 updatePublicSizeFilter(true);
@@ -900,11 +899,7 @@ function filterBySize(size,btn){document.querySelectorAll('.size-filter').forEac
 function searchProducts(q){const l=activeProducts().filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));renderProducts(l)}
 function focusSearch(){const s=document.getElementById("searchInput");s.classList.remove("hidden");s.focus();s.scrollIntoView({behavior:"smooth",block:"center"})}
 function toggleMobileNav(){document.getElementById("mainNav").style.display=document.getElementById("mainNav").style.display==="flex"?"none":"flex";document.getElementById("mainNav").style.position="absolute";document.getElementById("mainNav").style.top="68px";document.getElementById("mainNav").style.left="0";document.getElementById("mainNav").style.right="0";document.getElementById("mainNav").style.padding="22px";document.getElementById("mainNav").style.background="#fff";document.getElementById("mainNav").style.flexDirection="column"}
-function addToCart(id){
-  const p=products.find(x=>String(x.id)===String(id));
-  if(!p||!p.active){toast("Produto indisponível.");return;}
-  viewProduct(id);
-}
+function addToCart(id){viewProduct(id)}
 function changeQty(key,d){const x=cart.find(i=>(i.key||String(i.id))===String(key));if(!x)return;const p=products.find(i=>i?.id===x?.id);if(!x)return;const stock=p?getVariantStock(p,x.size||x.tamanho||"",x.color||x.cor||""):0;x.qty+=d;if(x.qty<=0)cart=cart.filter(i=>(i.key||String(i.id))!==String(key));if(stock>0&&x.qty>stock)x.qty=stock;save();renderCart()}
 function removeCart(key){cart=cart.filter(x=>(x.key||String(x.id))!==String(key));save();renderCart()}
 function renderCart(){const c=document.getElementById("cartItems");document.getElementById("cartCount").textContent=cart.reduce((a,x)=>a+x.qty,0);if(!cart.length){c.innerHTML="<p style='padding:25px 0;color:rgba(255,255,255,.72)'>Seu carrinho está vazio.</p>";document.getElementById("cartTotal").textContent=money(0);return}let total=0;c.innerHTML=cart.map(x=>{const p=products.find(i=>i.id===x.id);if(!p)return "";total+=p.price*x.qty;return `<div class="cart-item"><div class="cart-thumb">${p.image?`<img src="${esc(p.image)}" style="width:100%;height:100%;object-fit:cover">`:""}</div><div><h4>${esc(p.name)}</h4><small>${money(p.price)}${x.size?` • Tamanho: ${esc(x.size)}`:""}${x.color?` • Cor: ${esc(x.color)}`:""}</small><div class="qty"><button onclick="changeQty('${esc(x.key||String(p.id))}',-1)">−</button><span>${x.qty}</span><button onclick="changeQty('${esc(x.key||String(p.id))}',1)">+</button></div></div><button class="remove" onclick="removeCart('${esc(x.key||String(p.id))}')">×</button></div>`}).join("");document.getElementById("cartTotal").textContent=money(total)}
@@ -933,23 +928,6 @@ function selectSizeTab(btn,size){
   const sizeBtn=[...document.querySelectorAll('#productDetail [data-option-type="size"]')].find(b=>b.dataset.optionValue===size); if(sizeBtn)selectOption(sizeBtn);
   refreshDetailColors(size);
   refreshDetailAvailability();
-}
-function getDetailOptions(){
-  const root=document.getElementById("productDetail");
-  if(!root)return {size:"",color:""};
-  const sizeBtn=root.querySelector('[data-option-type="size"].active');
-  const colorBtn=root.querySelector('[data-option-type="color"].active');
-  return {
-    size:sizeBtn?.dataset.optionValue||"",
-    color:colorBtn?.dataset.optionValue||""
-  };
-}
-function selectOption(btn){
-  if(!btn)return;
-  const group=btn.closest("[data-option-group]");
-  if(!group)return;
-  group.querySelectorAll(".option").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
 }
 function refreshDetailColors(size){
   const p=window.currentDetailProduct;if(!p)return;const box=document.querySelector('#productDetail [data-option-group="color"]');if(!box)return;
@@ -992,7 +970,7 @@ function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';updateCategoryFields();document.getElementById('pPrimarySize').value=(p.sizes&&p.sizes[0])||((p.variants||[])[0]?.size)||'';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pColors').value=(p.colors||[]).join(',');document.getElementById('pVariants').value=(p.variants||[]).map(v=>`${v.size||v.tamanho||''}|${v.color||v.cor||''}|${Number(v.stock||0)}`).join('\n');document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';updateCategoryFields();document.getElementById('pPrimarySize').value=(p.sizes&&p.sizes[0])||((p.variants||[])[0]?.size)||'';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSizes').value=(p.sizes||[]).join(',');document.getElementById('pVariants').value=(p.variants||[]).map(v=>`${v.size||v.tamanho||''}|${v.color||v.cor||''}|${Number(v.stock||0)}`).join('\n');document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
 }
 
 function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
@@ -1067,7 +1045,7 @@ function updatePublicSizeFilter(show){
 
 function clearProductForm(){
   editingId=null;
-  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pColors","pVariants","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
+  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSizes","pVariants","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
   document.getElementById("pCategory").value="clothing";document.getElementById("pPrimarySize").value="";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;
   updateCategoryFields();
   document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
@@ -1096,18 +1074,22 @@ async function saveProduct(){
   }
   const sizes=category==='clothing'?[primarySize]:[];
   pSizes.value=sizes.join(',');
-  const colors=pColors.value.split(",").map(x=>x.trim()).filter(Boolean);
+  const colors=[];
   const variants=(category==='clothing'?(pVariants.value||""):"").split(/\n+/).map(line=>line.trim()).filter(Boolean).map(line=>{
-    const [size="",color="",stock="0"]=line.split("|");
-    return {size:String(size).trim(),tamanho:String(size).trim(),color:String(color).trim(),cor:String(color).trim(),stock:Math.max(0,Number(String(stock).replace(',','.'))||0)};
-  }).filter(v=>v.size||v.color);
+    const parts=line.split("|").map(x=>x.trim());
+    // Novo formato: TAMANHO|ESTOQUE.
+    // Mantém leitura de produtos antigos no formato TAMANHO|COR|ESTOQUE.
+    const size=parts[0]||"";
+    const stock=parts.length>=3?parts[2]:(parts[1]||"0");
+    return {size:String(size).trim(),tamanho:String(size).trim(),color:"",cor:"",stock:Math.max(0,Number(String(stock).replace(',','.'))||0)};
+  }).filter(v=>v.size);
   const variantStock=variants.reduce((sum,v)=>sum+Number(v.stock||0),0);
   const data={name:pName.value.trim(),category,cost:Number(pCost.value||0),price:Number(pPrice.value||0),stock:variants.length?variantStock:Math.max(0,Number(pStock.value||0)),image:imageList[0]||"",images:imageList,description:pDescription.value.trim(),sizes,colors,variants,supplier:pSupplier.value.trim(),newArrival:pNew.checked,featured:pFeatured.checked,active:pStatus.value==="active"};
   if(!data.name){toast("Informe o nome.");return}
   if(data.price<0||data.cost<0){toast("Preço e custo não podem ser negativos.");return}
   if(editingId){const p=products.find(x=>String(x.id)===String(editingId));if(!p){toast("Produto não encontrado.");return}Object.assign(p,data);}else{data.id=Date.now();products.push(data)}
   const synced=await syncProductsCloud();
-  if(synced){toast("Produto salvo com estoque separado por tamanho/cor.");clearProductForm();renderAll();}
+  if(synced){toast("Produto salvo com estoque separado por tamanho.");clearProductForm();renderAll();}
   else toast("Não foi possível salvar o produto online.");
 }
 async function deleteProduct(id){
