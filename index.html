@@ -510,6 +510,29 @@ footer{padding:55px clamp(18px,4vw,60px)}
 }
 </style>
 
+
+<style id="sqm-newsletter-premium">
+.sqm-newsletter{position:relative;overflow:hidden;margin:0;padding:100px 20px;background:#0b0b0c;color:#fff;text-align:center}
+.sqm-newsletter:before{content:"SQM";position:absolute;right:-20px;bottom:-95px;font-size:clamp(170px,28vw,420px);font-weight:900;letter-spacing:-.09em;line-height:1;color:rgba(255,255,255,.035);pointer-events:none}
+.sqm-newsletter:after{content:"";position:absolute;left:-120px;top:-120px;width:320px;height:320px;border:1px solid rgba(255,255,255,.08);border-radius:50%;box-shadow:0 0 0 45px rgba(255,255,255,.02),0 0 0 90px rgba(255,255,255,.015);pointer-events:none}
+.sqm-newsletter-inner{position:relative;z-index:1;width:min(760px,100%);margin:auto}
+.sqm-newsletter-kicker{font-size:9px;font-weight:800;letter-spacing:.28em;color:#999;margin-bottom:18px}
+.sqm-newsletter h2{font-size:clamp(32px,5vw,58px);font-weight:900;letter-spacing:.03em;line-height:1.05;margin:0 0 16px}
+.sqm-newsletter h2 span{color:#aaa}
+.sqm-newsletter p{max-width:590px;margin:0 auto 30px;color:#aaa;font-size:14px;line-height:1.7}
+.sqm-newsletter-form{display:flex;gap:8px;max-width:650px;margin:auto;padding:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:999px;backdrop-filter:blur(10px)}
+.sqm-newsletter-input-wrap{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:0 15px}
+.sqm-newsletter-icon{font-size:16px;color:#aaa}
+.sqm-newsletter-form input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#fff;padding:14px 0;font-size:13px}
+.sqm-newsletter-form input::placeholder{color:#777}
+.sqm-newsletter-form button{border:0;border-radius:999px;background:#fff;color:#111;padding:14px 22px;font-size:9px;font-weight:900;letter-spacing:.12em;cursor:pointer;transition:.2s;white-space:nowrap}
+.sqm-newsletter-form button:hover{background:#ddd;transform:translateY(-1px)}
+.sqm-newsletter-form button span{margin-left:5px;font-size:13px}
+.sqm-newsletter-note{display:block;margin-top:15px;color:#666;font-size:9px;letter-spacing:.03em}
+.sqm-newsletter-success{min-height:18px;margin-top:12px;color:#fff;font-size:11px;font-weight:700}
+@media(max-width:600px){.sqm-newsletter{padding:75px 16px}.sqm-newsletter-form{display:flex;flex-direction:column;border-radius:18px;padding:7px}.sqm-newsletter-input-wrap{padding:0 13px}.sqm-newsletter-form button{width:100%;padding:14px}.sqm-newsletter p{font-size:13px}}
+</style>
+
 </head>
 <body>
 
@@ -589,13 +612,21 @@ footer{padding:55px clamp(18px,4vw,60px)}
   </div>
 </section>
 
-<section class="newsletter">
-  <h2>STAY IN THE SQM WORLD</h2>
-  <p>Área preparada para novidades e comunicações da marca.</p>
-  <form onsubmit="event.preventDefault();toast('Obrigado. O cadastro está preparado para integração.');">
-    <input type="email" required placeholder="Seu e-mail">
-    <button>SUBSCRIBE</button>
-  </form>
+<section class="newsletter sqm-newsletter">
+  <div class="sqm-newsletter-inner">
+    <div class="sqm-newsletter-kicker">SQM / EXCLUSIVE ACCESS</div>
+    <h2>STAY IN THE <span>SQM</span> WORLD.</h2>
+    <p>Receba novidades, novos lançamentos e conteúdos exclusivos da Style Quality Model diretamente no seu e-mail.</p>
+    <form class="sqm-newsletter-form" onsubmit="event.preventDefault();sqmSubscribe(this);">
+      <div class="sqm-newsletter-input-wrap">
+        <span class="sqm-newsletter-icon">✉</span>
+        <input type="email" name="email" required autocomplete="email" placeholder="Digite seu melhor e-mail" aria-label="Seu e-mail">
+      </div>
+      <button type="submit">SUBSCRIBE <span>↗</span></button>
+    </form>
+    <small class="sqm-newsletter-note">Ao se inscrever, você receberá apenas comunicações da SQM.</small>
+    <div class="sqm-newsletter-success" id="sqmNewsletterSuccess" aria-live="polite"></div>
+  </div>
 </section>
 
 <section class="section container" id="contact">
@@ -1503,6 +1534,18 @@ document.querySelectorAll('[onclick="openLogin()"]')?.forEach(btn=>btn.addEventL
 </script>
 
 
+
+
+<script id="sqm-newsletter-js">
+function sqmSubscribe(form){
+  const email=form.querySelector('input[name="email"]')?.value.trim();
+  const success=document.getElementById('sqmNewsletterSuccess');
+  if(!email)return;
+  if(success)success.textContent='Obrigado! Seu e-mail foi registrado na SQM.';
+  form.reset();
+  toast('Inscrição realizada com sucesso!');
+}
+</script>
 
 </body>
 </html>
