@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://images.unsplash.com https://images.pexels.com data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;">
+<link rel="stylesheet" href="style.css">
 <meta name="sqm-public-boot" content="1">
 <script id="sqm-public-loader">
 (async()=>{
@@ -542,6 +544,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
   <nav id="mainNav">
     <a href="#home">HOME</a>
     <a href="#clothing">CLOTHING</a>
+    <a class="nav-featured" href="feminino.html">FEMININO</a>
     <a href="#fragrance">FRAGRANCE</a>
     <a href="#new">NEW ARRIVALS</a>
     <a href="#about">ABOUT</a>
@@ -1205,7 +1208,7 @@ function renderOrderSummary(list){
 }
 function renderAdminOrders(){
   const body=document.getElementById("adminOrders");if(!body)return;
-  if(!adminAuthenticated){body.innerHTML=`<div class="order-empty">Faça login para visualizar os pedidos.</div>`;return}
+  if(!adminAuthenticated){body.innerHTML=`<div class="order-empty">Fa��a login para visualizar os pedidos.</div>`;return}
   const search=String(document.getElementById("adminOrderSearch")?.value||"").trim().toLowerCase();
   const statusFilter=String(document.getElementById("adminOrderStatusFilter")?.value||"");
   const list=orders.filter(o=>{
