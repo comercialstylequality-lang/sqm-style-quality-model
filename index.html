@@ -578,8 +578,8 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
     <a href="#clothing">CATEGORIAS</a>
     <a href="#offers">OFERTAS DO DIA</a>
     <a href="#history">HISTÓRICO</a>
-    <a href="feminino.html">FEMININO</a>
-    <a href="#clothing">MASCULINO</a>
+    <a href="#clothing" onclick="filterProducts('female',this)">FEMININO</a>
+    <a href="#clothing" onclick="filterProducts('male',this)">MASCULINO</a>
     <a href="#contact">CONTATO</a>
   </nav>
   <div class="header-actions">
@@ -627,7 +627,9 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
     
     <button class="category active" onclick="filterProducts('clothing',this)">CLOTHING</button>
     <button class="category" onclick="filterProducts('fragrance',this)">FRAGRANCE</button>
-    <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
+    <button class="category" onclick="filterProducts('female',this)">FEMININO</button>
+  <button class="category" onclick="filterProducts('male',this)">MASCULINO</button>
+  <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
     <div class="size-filter-wrap hidden" id="sizeFilterWrap"><span class="size-filter-label">TAMANHO DA ROUPA:</span><div id="sizeFilterTabs" class="size-filter-tabs"><button class="category size-filter" onclick="filterBySize('P',this)">P</button><button class="category size-filter" onclick="filterBySize('M',this)">M</button><button class="category size-filter" onclick="filterBySize('G',this)">G</button><button class="category size-filter" onclick="filterBySize('GG',this)">GG</button></div></div>
   </div>
   <input id="searchInput" class="hidden" oninput="searchProducts(this.value)" placeholder="Pesquisar produto..." style="width:100%;padding:14px;border:1px solid #ddd;margin-bottom:18px">
@@ -710,6 +712,7 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
     <div class="cart-header"><div><span class="sqm-cart-kicker">SUA SELEÇÃO</span><h2>SACOLA</h2></div><button class="close" onclick="toggleCart()" aria-label="Fechar sacola">×</button></div>
     <div class="sqm-shipping-progress"><div><span>Frete grátis SQM</span><strong>Adicione mais itens à sua seleção</strong></div><div class="sqm-progress-track"><span></span></div></div>
     <div id="cartItems"></div>
+    <div class="cart-coupon" style="display:flex;gap:8px;margin:18px 0"><input id="cartCouponCode" placeholder="Código do cupom" style="flex:1;padding:11px;border:1px solid #ddd"><button class="admin-btn" onclick="applyCoupon(document.getElementById('cartCouponCode').value)">APLICAR</button></div>
     <div class="sqm-cart-benefits"><span>✓ Compra garantida</span><span>↗ Envio acompanhado</span></div>
     <div class="total"><span>TOTAL DA SELEÇÃO</span><span id="cartTotal">R$0,00</span></div>
     <button class="checkout" onclick="openCheckout()">CHECKOUT</button>
@@ -745,7 +748,7 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
             <option value="">Forma de pagamento</option>
             <option value="PIX">Pix</option>
             <option value="CREDIT_CARD">Cartão de crédito</option>
-          </select><div id="pix-recommended-note" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,150,136,.08);border:1px solid rgba(0,150,136,.2);font-size:13px;line-height:1.4"><strong>💠 PIX — recomendado</strong><br>No Pix, o QR Code e o código Copia e Cola serão exibidos aqui. No cartão, você será levado ao checkout seguro do Asaas.</div>
+          </select><div id="pix-recommended-note" style="margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(0,150,136,.08);border:1px solid rgba(0,150,136,.2);font-size:13px;line-height:1.4"><strong>💠 PIX �� recomendado</strong><br>No Pix, o QR Code e o código Copia e Cola serão exibidos aqui. No cartão, você será levado ao checkout seguro do Asaas.</div>
         </div>
         <button class="checkout">FINALIZAR PEDIDO</button>
       </form>
@@ -786,6 +789,7 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
       <button class="admin-tab" data-admin-tab="products" onclick="switchAdminTab('products',this)">PRODUTOS</button>
       <button class="admin-tab" data-admin-tab="orders" onclick="switchAdminTab('orders',this)">PEDIDOS</button>
       <button class="admin-tab" data-admin-tab="new" onclick="switchAdminTab('new',this)">NOVO PRODUTO</button>
+      <button class="admin-tab" data-admin-tab="coupons" onclick="switchAdminTab('coupons',this)">GERENCIAR CUPONS</button>
       <button class="admin-tab" data-admin-tab="editor" onclick="switchAdminTab('editor',this)">EDITOR</button>
     </div>
 
@@ -854,6 +858,8 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
         <div class="field"><label>CATEGORIA</label><select id="pCategory" onchange="updateCategoryFields()"><option value="clothing">Clothing</option><option value="fragrance">Fragrance</option></select></div>
         <div class="field"><label>CUSTO</label><input id="pCost" type="number" step=".01" min="0"></div>
         <div class="field"><label>PREÇO SQM</label><input id="pPrice" type="number" step=".01" min="0"></div>
+        <div class="field"><label>PREÇO ORIGINAL (SEM DESCONTO)</label><input id="pOriginalPrice" type="number" step=".01" min="0" placeholder="Opcional"><small style="display:block;margin-top:6px;color:#777">Preencha para exibir preço riscado e desconto.</small></div>
+        <div class="field"><label>GÊNERO</label><select id="pGender"><option value="female">Feminino</option><option value="male">Masculino</option><option value="unisex">Unissex</option></select></div>
         <div class="field"><label>ESTOQUE DO PRODUTO</label><input id="pStock" type="number" min="0" step="1" placeholder="Quantidade em estoque"><small style="display:block;margin-top:6px;color:#777">Estoque total do produto. Não é necessário informar tamanho.</small></div>
         <div class="field"><label>STATUS</label><select id="pStatus"><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
         <div class="field full" id="pSizesField"><label>TAMANHOS DISPONÍVEIS <span style="color:#a00">*</span></label><div style="display:flex;gap:16px;flex-wrap:wrap;padding:11px 0"><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="P"> P</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="M"> M</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="G"> G</label><label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:600"><input type="checkbox" class="pSizeOption" value="GG"> GG</label></div><small style="display:block;margin-top:4px;color:#777">Marque ao menos um tamanho. Obrigatório para produtos da categoria Clothing. O estoque acima é geral e vale para todos os tamanhos.</small></div>
@@ -872,6 +878,16 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
       </div>
     </div>
   </div>
+
+    <div class="admin-view" id="adminCouponsView">
+      <div class="admin-toolbar"><div><div class="eyebrow">PROMOÇÕES</div><h3>GERENCIAR CUPONS</h3></div></div>
+      <div class="admin-grid">
+        <div class="field"><label>CÓDIGO DO CUPOM</label><input id="couponCode" placeholder="SQM10" maxlength="24"></div>
+        <div class="field"><label>DESCONTO (%)</label><input id="couponPercent" type="number" min="1" max="100" step="1" placeholder="10"></div>
+      </div>
+      <div class="admin-actions"><button class="admin-btn" onclick="saveCoupon()">SALVAR CUPOM</button></div>
+      <div class="admin-table-wrap" style="margin-top:22px"><table class="admin-table"><thead><tr><th>CÓDIGO</th><th>DESCONTO</th><th>AÇÃO</th></tr></thead><tbody id="adminCoupons"></tbody></table></div>
+    </div>
 
     <div class="admin-view" id="adminEditorView">
       <div class="admin-toolbar">
@@ -940,6 +956,11 @@ async function syncProductsCloud(){
   }catch(e){console.warn("SQM catalog save",e)}
   return false;
 }
+let coupons=window.sqmCoupons||[];let appliedCoupon=null;
+function saveCoupon(){const code=(document.getElementById('couponCode')?.value||'').trim().toUpperCase(),percent=Number(document.getElementById('couponPercent')?.value||0);if(!code||percent<1||percent>100)return toast('Informe um código e percentual válido.');coupons=[...coupons.filter(c=>c.code!==code),{code,percent}];window.sqmCoupons=coupons;renderCoupons();toast('Cupom salvo nesta sessão.');}
+function removeCoupon(code){coupons=coupons.filter(c=>c.code!==code);window.sqmCoupons=coupons;renderCoupons();}
+function renderCoupons(){const el=document.getElementById('adminCoupons');if(el)el.innerHTML=coupons.length?coupons.map(c=>`<tr><td>${esc(c.code)}</td><td>${c.percent}%</td><td><button class="admin-mini" onclick="removeCoupon('${esc(c.code)}')">REMOVER</button></td></tr>`).join(''):'<tr><td colspan="3">Nenhum cupom cadastrado.</td></tr>';}
+function applyCoupon(code){const found=coupons.find(c=>c.code===String(code||'').trim().toUpperCase());if(!found)return false;appliedCoupon=found;renderCart();toast(`Cupom ${found.code} aplicado.`);return true;}
 function save(){ /* carrinho mantido apenas durante a sessão; catálogo/pedidos ficam no servidor */ }
 async function loadAdminOrders(){
   if(!adminAuthenticated){orders=[];return false;}
@@ -949,12 +970,14 @@ function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",c
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
 function activeProducts(){return products.filter(p=>p.active)}
+function discountPercent(p){const original=Number(p.originalPrice||0),price=Number(p.price||0);return original>price?Math.round((1-price/original)*100):0}
+function displayPrice(p){const off=discountPercent(p);return off?`<span class="price-old">${money(p.originalPrice)}</span><span class="price-current">${money(p.price)}</span><span class="price-off">${off}% OFF</span>`:money(p.price)}
 function productCard(p){const mainImg=productImages(p)[0]||"";
-return `<article class="product sqm-clickable-product" data-product-id="${p.id}" role="button" tabindex="0" onclick="viewProduct(${p.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProduct(${p.id})}">${p.newArrival?'<span class="badge">NEW ARRIVAL</span>':''}<div class="product-image">${mainImg?`<img src="${esc(mainImg)}" alt="${esc(p.name)}">`:'<div class="placeholder">FOTO DO PRODUTO<br><small>Adicione uma imagem própria/licenciada no painel</small></div>'}</div><div class="product-info"><h3>${esc(p.name)}</h3><div class="price">${money(p.price)}</div><div class="product-buttons"><button class="view" onclick="event.stopPropagation();viewProduct(${p.id})">VIEW PRODUCT</button><button class="add" onclick="event.stopPropagation();addToCart(${p.id})">ADD TO CART</button></div></div></article>`
+return `<article class="product sqm-clickable-product" data-product-id="${p.id}" role="button" tabindex="0" onclick="viewProduct(${p.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();viewProduct(${p.id})}">${p.newArrival?'<span class="badge">NEW ARRIVAL</span>':''}<div class="product-image">${mainImg?`<img src="${esc(mainImg)}" alt="${esc(p.name)}">`:'<div class="placeholder">FOTO DO PRODUTO<br><small>Adicione uma imagem própria/licenciada no painel</small></div>'}</div><div class="product-info"><h3>${esc(p.name)}</h3><div class="price">${displayPrice(p)}</div><div class="product-buttons"><button class="view" onclick="event.stopPropagation();viewProduct(${p.id})">VIEW PRODUCT</button><button class="add" onclick="event.stopPropagation();addToCart(${p.id})">ADD TO CART</button></div></div></article>`
 }
 function renderAll(){
 updatePublicSizeFilter(true);
-renderProducts(activeProducts());renderFragrance();renderNew();renderCart();renderAdmin();updateStats()
+renderProducts(activeProducts());renderFragrance();renderNew();renderCart();renderAdmin();renderCoupons();updateStats()
 }
 function renderProducts(list){document.getElementById("productGrid").innerHTML=list.length?list.map(productCard).join(""):"<p style='color:rgba(255,255,255,.72)'>Nenhum produto disponível.</p>"}
 function renderFragrance(){const l=activeProducts().filter(p=>p.category==="fragrance");document.getElementById("fragranceGrid").innerHTML=l.length?l.map(productCard).join(""):"<p style='color:#aaa'>Nenhuma fragrância cadastrada ainda.</p>"}
@@ -967,6 +990,8 @@ function filterProducts(type,btn){
   let l=activeProducts();
   if(type==='clothing')l=l.filter(p=>p.category==='clothing');
   if(type==='fragrance')l=l.filter(p=>p.category==='fragrance');
+  if(type==='female')l=l.filter(p=>['female','unisex'].includes(p.gender||'unisex'));
+  if(type==='male')l=l.filter(p=>['male','unisex'].includes(p.gender||'unisex'));
   if(type==='new')l=l.filter(p=>p.newArrival);
   renderProducts(l);
 }
@@ -1027,7 +1052,7 @@ function viewProduct(id){
  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
  try{ window.currentDetailProduct=p;
  const sizes=getAvailableSizes(p),colors=getAvailableColors(p,sizes[0]||""),imgs=productImages(p);
- document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><h2>${esc(p.name)}</h2><div class="detail-price">${money(p.price)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${sizes.length?`<div class="option-title">ESCOLHA O TAMANHO</div><div class="options" data-option-group="size">${sizes.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailColors(this.dataset.optionValue);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}<span id="detailQty" style="display:none">1</span><div style="display:flex;gap:8px;margin-top:20px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div></div></div>`;
+ document.getElementById("productDetail").innerHTML=`<div class="product-detail"><div class="multi-gallery">${window.sqmShowSwipeGallery(imgs,p.name)||'<div class="multi-main"><div class="placeholder">IMAGEM DO PRODUTO<br><small>Adicione fotos no painel</small></div></div>'}${imgs.length>1?`<div class="multi-thumbs">${imgs.map((src,i)=>`<button class="multi-thumb ${i===0?'active':''}" onclick="selectProductPhoto(${p.id},${i})"><img src="${esc(src)}" alt="Foto ${i+1}"></button>`).join('')}</div><div class="multi-count">${imgs.length} FOTOS • DESLIZE PARA TROCAR</div>`:''}</div><div class="detail-info"><h2>${esc(p.name)}</h2><div class="detail-price">${displayPrice(p)}</div><div class="detail-description">${esc(p.description||"Descrição a ser adicionada pelo administrador.")}</div>${sizes.length?`<div class="option-title">ESCOLHA O TAMANHO</div><div class="options" data-option-group="size">${sizes.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="size" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailColors(this.dataset.optionValue);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}${colors.length?`<div class="option-title">ESCOLHA A COR</div><div class="options" data-option-group="color">${colors.map((x,i)=>`<button type="button" class="option ${i===0?'active':''}" data-option-type="color" data-option-value="${esc(x)}" onclick="selectOption(this);refreshDetailAvailability()">${esc(x)}</button>`).join('')}</div>`:''}<span id="detailQty" style="display:none">1</span><div style="display:flex;gap:8px;margin-top:20px"><button class="btn dark" onclick="addDetailToCart(${p.id})">ADD TO CART</button><button class="btn" style="border-color:#111" onclick="buyNow(${p.id})">BUY NOW</button></div></div></div>`;
  refreshDetailAvailability();
  document.getElementById("productModal").classList.add("open");
  }catch(err){
@@ -1056,7 +1081,7 @@ function buyNow(id){addDetailToCart(id);if(cart.length)openCheckout()}
 function editProduct(id){
   if(!adminAuthenticated){openLogin();return}
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;editingId=p.id;
-  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';const _pSizes=Array.isArray(p.sizes)?p.sizes.map(x=>String(x).trim()):[];document.querySelectorAll('.pSizeOption').forEach(cb=>cb.checked=_pSizes.includes(cb.value));document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
+  document.getElementById('pName').value=p.name||'';document.getElementById('pCategory').value=p.category||'clothing';document.getElementById('pGender').value=p.gender||'unisex';document.getElementById('pCost').value=p.cost??'';document.getElementById('pPrice').value=p.price??'';document.getElementById('pOriginalPrice').value=p.originalPrice??'';document.getElementById('pStock').value=p.stock??'';document.getElementById('pImage').value=p.image||'';document.getElementById('pImages').value=(p.images||[]).slice(1).join('\n');document.getElementById('pDescription').value=p.description||'';document.getElementById('pSupplier').value=p.supplier||'';document.getElementById('pNew').checked=!!p.newArrival;document.getElementById('pFeatured').checked=!!p.featured;document.getElementById('pStatus').value=p.active?'active':'inactive';const _pSizes=Array.isArray(p.sizes)?p.sizes.map(x=>String(x).trim()):[];document.querySelectorAll('.pSizeOption').forEach(cb=>cb.checked=_pSizes.includes(cb.value));document.getElementById('productFormTitle').textContent='EDITAR PRODUTO';updateCategoryFields();switchAdminTab('new')
 }
 
 function selectProductPhoto(id,index){const p=products.find(x=>x.id===id);if(!p)return;const imgs=productImages(p),src=imgs[index];if(!src)return;const main=document.getElementById("sqmSwipeMain");if(main)main.src=src;document.querySelectorAll(".multi-thumb").forEach((b,i)=>b.classList.toggle("active",i===index));}
@@ -1098,7 +1123,7 @@ async function checkAdminLogin(){
   catch{adminAuthenticated=false;document.getElementById("adminPanel").classList.remove("active");}
 }
 function switchAdminTab(tab,btn){
-  const map={overview:"adminOverview",products:"adminProductsView",orders:"adminOrdersView",new:"adminNewProduct",editor:"adminEditorView"};
+  const map={overview:"adminOverview",products:"adminProductsView",orders:"adminOrdersView",new:"adminNewProduct",coupons:"adminCouponsView",editor:"adminEditorView"};
   document.querySelectorAll(".admin-view").forEach(v=>v.classList.remove("active"));
   document.querySelectorAll(".admin-tab").forEach(v=>v.classList.remove("active"));
   const el=document.getElementById(map[tab]); if(el) el.classList.add("active");
@@ -1125,7 +1150,7 @@ function updatePublicSizeFilter(show){
 
 function clearProductForm(){
   editingId=null;
-  ["pName","pCost","pPrice","pStock","pImage","pImages","pDescription","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
+  ["pName","pCost","pPrice","pOriginalPrice","pStock","pImage","pImages","pDescription","pSupplier"].forEach(id=>document.getElementById(id).value="");const pf=document.getElementById("pImageFiles");if(pf)pf.value="";
   document.getElementById("pCategory").value="clothing";document.getElementById("pStatus").value="active";document.getElementById("pNew").checked=false;document.getElementById("pFeatured").checked=false;document.querySelectorAll('.pSizeOption').forEach(cb=>cb.checked=false);
   updateCategoryFields();
   document.getElementById("productFormTitle").textContent="NOVO PRODUTO";
@@ -1153,8 +1178,10 @@ async function saveProduct(){
   const data={
     name:pName.value.trim(),
     category,
+    gender:document.getElementById('pGender')?.value||'unisex',
     cost:Number(pCost.value||0),
     price:Number(pPrice.value||0),
+    originalPrice:Number(document.getElementById('pOriginalPrice')?.value||0),
     stock,
     image:imageList[0]||"",
     images:imageList,
@@ -1429,7 +1456,7 @@ async function submitOrder(event){
   const items=checkoutItems();if(!items.length){toast("Não foi possível montar o pedido.");return}
   const orderId="SQM-"+Date.now()+"-"+Math.random().toString(36).slice(2,8).toUpperCase();if(btn){btn.disabled=true;btn.textContent="CARREGANDO..."}
   try{
-    const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({orderId,paymentMethod:payment,customer,items})});
+    const r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({orderId,paymentMethod:payment,customer,items,coupon:appliedCoupon?{code:appliedCoupon.code,percent:appliedCoupon.percent}:null})});
     const data=await r.json().catch(()=>({}));if(!r.ok||!data.success)throw new Error(data.error||"Não foi possível criar o pagamento.");
     closeModal("checkoutModal");
     if(payment==="PIX"){if(!data.pix?.payload)throw new Error("O Asaas não retornou o código Pix.");showPixPayment(data)}else{if(!data.invoiceUrl)throw new Error("O Asaas não retornou o link de pagamento.");window.location.href=data.invoiceUrl}
