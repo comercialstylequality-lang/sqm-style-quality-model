@@ -325,7 +325,7 @@ nav{gap:clamp(14px,2.2vw,34px)}nav a{font-size:10px;letter-spacing:.14em;positio
 .dark-section{background:#0c0c0d}.dark-section .product{background:#151516;border-color:#252526;color:#fff}.dark-section .product-info h3{color:#fff}.dark-section .price{color:#fff}.dark-section .view{background:transparent;color:#fff;border-color:#fff}.dark-section .section-head p{color:#aaa}
 .about-wrap{max-width:900px}.about-wrap h2{font-size:clamp(32px,5vw,58px)}.about-wrap p{color:#6c6d72}
 .newsletter{background:#eeece7;padding:85px 20px}.newsletter p{color:#6b6c70;margin-bottom:25px}.newsletter form{box-shadow:0 10px 30px rgba(0,0,0,.07);border-radius:999px;overflow:hidden}.newsletter input{border:0;padding:16px 20px}.newsletter button{border:0;padding:0 28px}
-footer{padding:55px clamp(18px,4vw,60px)}
+footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display:block;margin:24px 0 0 auto;padding:0;border:0;background:transparent;color:rgba(255,255,255,.46);font:700 8px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:color .2s ease}.admin-access:hover,.admin-access:focus-visible{color:#fff}.admin-access:focus-visible{outline:1px solid rgba(255,255,255,.6);outline-offset:6px}
 .cart-panel{box-shadow:-20px 0 60px rgba(0,0,0,.15)}.cart-item small{color:#777}.remove{font-size:20px}.total{border-top:1px solid #111}
 .modal-box{border-radius:22px;box-shadow:0 30px 100px rgba(0,0,0,.22)}.gallery-main,.multi-main{border-radius:16px;overflow:hidden}.detail-info .eyebrow{color:#777}.detail-description{color:#666}.detail-info p{color:#777!important}
 .admin{background:linear-gradient(135deg,#f3f1ec,#e9e7e1);padding:70px 20px}.admin-box{border-radius:24px;padding:clamp(22px,4vw,38px);box-shadow:0 25px 80px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.06)}.admin-top h2{font-size:32px;letter-spacing:.08em}.admin-nav{display:flex;gap:7px;overflow-x:auto;padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid #e8e5df}.admin-tab{border:0;background:#f4f2ed;padding:11px 14px;border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}.admin-tab.active{background:#111;color:#fff;box-shadow:0 7px 18px rgba(0,0,0,.12)}.stat{background:#faf9f6;border:1px solid #e9e6df;border-radius:16px}.stat span{color:#777}.stat strong{color:#111}.notice{background:#f7f5f0;border:1px solid #e6e2da;border-radius:14px;padding:15px;color:#666}.admin-toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}.admin-toolbar h3{letter-spacing:.08em}.admin-search{border:1px solid #ddd8cf!important;border-radius:999px!important;padding:11px 15px!important}.admin-btn,.admin-mini,.editor-toolbar button{border-radius:999px;transition:.2s}.admin-btn:hover,.admin-mini:hover,.editor-toolbar button:hover{transform:translateY(-1px)}.admin-table-wrap{border:1px solid #e8e4dc;border-radius:16px;overflow:auto;background:#fff}.admin-table th{background:#f7f5f1}.admin-table td,.admin-table th{padding:13px 11px}
@@ -658,7 +658,7 @@ footer{padding:55px clamp(18px,4vw,60px)}
 <footer>
   <div class="logo">SQM<small>STYLE QUALITY MODEL</small></div>
   <p>© 2026 SQM — Style Quality Model</p>
-  <button class="header-action" style="color:#fff" onclick="openLogin()">ADMIN</button>
+  <button class="admin-access" type="button" onclick="openLogin()" aria-label="Abrir acesso administrativo">Acesso restrito</button>
 </footer>
 
 <div class="drawer" id="cartDrawer">
