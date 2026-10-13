@@ -621,15 +621,16 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 
 <section class="section container" id="clothing">
   <div class="section-head">
-    <div><h2>ROUPAS</h2><p>Explore a seleção atual da SQM.</p></div>
+    <div><h2>COLEÇÕES</h2><p>Explore as seleções SQM por gênero e categoria.</p></div>
   </div>
-  <div class="categories">
-    
+  <div class="sqm-gender-tabs" role="tablist" aria-label="Escolha uma coleção">
+    <button class="sqm-gender-tab active" role="tab" aria-selected="true" onclick="filterProducts('female',this)">FEMININO</button>
+    <button class="sqm-gender-tab" role="tab" aria-selected="false" onclick="filterProducts('male',this)">MASCULINO</button>
+  </div>
+  <div class="categories" aria-label="Categorias da coleção">
     <button class="category active" onclick="filterProducts('clothing',this)">ROUPAS</button>
     <button class="category" onclick="filterProducts('fragrance',this)">PERFUMES</button>
-    <button class="category" onclick="filterProducts('female',this)">FEMININO</button>
-  <button class="category" onclick="filterProducts('male',this)">MASCULINO</button>
-  <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
+    <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
     <div class="size-filter-wrap hidden" id="sizeFilterWrap"><span class="size-filter-label">TAMANHO DA ROUPA:</span><div id="sizeFilterTabs" class="size-filter-tabs"><button class="category size-filter" onclick="filterBySize('P',this)">P</button><button class="category size-filter" onclick="filterBySize('M',this)">M</button><button class="category size-filter" onclick="filterBySize('G',this)">G</button><button class="category size-filter" onclick="filterBySize('GG',this)">GG</button></div></div>
   </div>
   <input id="searchInput" class="hidden" oninput="searchProducts(this.value)" placeholder="Pesquisar produto..." style="width:100%;padding:14px;border:1px solid #ddd;margin-bottom:18px">
@@ -978,7 +979,8 @@ renderProducts(activeProducts());renderFragrance();renderNew();renderCart();rend
   function renderNew(){const l=activeProducts().filter(p=>p.newArrival);document.getElementById("newGrid").innerHTML=l.length?l.map(productCard).join(""):emptyCatalogMessage('Nenhum lançamento disponível')}
   function filterProducts(type,btn){
   document.querySelectorAll('.categories > .category').forEach(x=>x.classList.remove('active'));
-  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.sqm-gender-tab').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false')});
+  if(btn){btn.classList.add('active');if(btn.classList.contains('sqm-gender-tab'))btn.setAttribute('aria-selected','true')}
   document.querySelectorAll('.size-filter').forEach(x=>x.classList.remove('active'));
   updatePublicSizeFilter(type==='clothing');
   let l=activeProducts();
