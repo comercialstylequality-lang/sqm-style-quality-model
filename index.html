@@ -558,28 +558,33 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   .newsletter{border-top:1px solid var(--sqm-line);border-bottom:1px solid var(--sqm-line)}
   .newsletter h2{letter-spacing:.06em}
   @media(max-width:650px){.hero-content{padding-left:0}.hero h1{letter-spacing:.08em}.hero p{letter-spacing:.04em}.section-head h2{letter-spacing:.03em}.product-info h3{min-height:0}}
-</style>
+  </style>
+  <style id="sqm-marketplace-final">
+    .sqm-market-header{height:auto!important;min-height:76px;display:grid!important;grid-template-columns:auto minmax(240px,560px) auto;grid-template-areas:"logo search actions" "nav nav nav";gap:0 28px;padding:16px clamp(18px,5vw,72px)!important;background:#fff!important;border-bottom:1px solid #e5e5e5!important}.sqm-market-header .logo{grid-area:logo;align-self:center;font-family:'Playfair Display',Georgia,serif}.sqm-header-search{grid-area:search;display:flex;border:1px solid #dcdcdc;overflow:hidden}.sqm-header-search input{width:100%;border:0;outline:0;padding:13px 16px;font:13px 'DM Sans',Arial,sans-serif}.sqm-header-search button{width:48px;border:0;background:#111;color:#fff}.sqm-market-nav{grid-area:nav;display:flex;justify-content:center;gap:clamp(16px,3vw,42px);padding-top:16px!important}.sqm-market-nav a{font-size:10px!important;letter-spacing:.14em!important;color:#4a4a4a}.sqm-market-header .header-actions{grid-area:actions}.sqm-market-header .mobile-menu{display:none}.sqm-benefits{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #e5e5e5;border-width:0 1px 1px}.sqm-benefits>div{display:grid;grid-template-columns:32px 1fr;column-gap:10px;align-items:center;padding:22px 20px;border-right:1px solid #e5e5e5}.sqm-benefits>div:last-child{border-right:0}.sqm-benefits span{grid-row:span 2;font-size:22px}.sqm-benefits strong{font-size:11px}.sqm-benefits small{font-size:10px;color:#777}.sqm-market-carousel{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;padding-top:48px}.sqm-banner{min-height:290px;display:flex;align-items:end;padding:30px;background-position:center;background-size:cover;color:#fff;position:relative;overflow:hidden}.sqm-banner:before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.64),rgba(0,0,0,.04) 75%)}.sqm-banner>div{position:relative;z-index:1}.sqm-banner h2{font:500 clamp(28px,4vw,52px)/.95 'Playfair Display',Georgia,serif;margin:12px 0 20px}.sqm-banner a{border-bottom:1px solid #fff;font-size:10px;letter-spacing:.14em}.sqm-banner-main{background-image:url('https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1600&q=85')}.sqm-banner-secondary{background-image:url('https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?auto=format&fit=crop&w=1100&q=85')}.products{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:18px!important;padding:4px 2px 18px}.products .product{flex:0 0 clamp(220px,24vw,285px);scroll-snap-align:start}.product-image{height:auto!important;aspect-ratio:4/5}.product-info{padding:16px 2px!important}.product-info:after{content:"Envio grátis SQM  ·  em até 10x sem juros";display:block;color:#777;font-size:10px;margin-top:8px}.cart-panel{padding:28px!important}.sqm-cart-kicker{font-size:9px;letter-spacing:.18em;color:#777}.sqm-shipping-progress{padding:16px 0;border-bottom:1px solid #e5e5e5}.sqm-shipping-progress div:first-child{display:flex;justify-content:space-between;font-size:10px}.sqm-shipping-progress strong{font-weight:400;color:#777}.sqm-progress-track{height:4px;background:#ededed;margin-top:12px}.sqm-progress-track span{display:block;width:62%;height:100%;background:#111}.sqm-cart-benefits{display:flex;justify-content:space-between;gap:8px;color:#777;font-size:9px;padding-top:18px}.drawer-bg,.modal,.login{backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important}.detail-info{position:sticky;top:24px;align-self:start}
+    @media(max-width:800px){.sqm-market-header{grid-template-columns:auto 1fr auto;grid-template-areas:"menu logo actions" "search search search" "nav nav nav";gap:12px;padding:12px 16px!important}.sqm-market-header .mobile-menu{display:block;grid-area:menu;font-size:0}.sqm-market-header .mobile-menu:after{content:"☰";font-size:20px}.sqm-market-header .logo{grid-area:logo;font-size:20px}.sqm-market-header .header-actions{grid-area:actions}.sqm-market-header .header-action{font-size:0}.sqm-market-header .header-action:last-child{font-size:9px;padding:8px}.sqm-market-nav{overflow-x:auto;justify-content:flex-start;gap:22px;padding-top:4px!important}.sqm-market-nav a{white-space:nowrap}.sqm-benefits{grid-template-columns:repeat(2,1fr)}.sqm-benefits>div:nth-child(2){border-right:0}.sqm-benefits>div:nth-child(-n+2){border-bottom:1px solid #e5e5e5}.sqm-market-carousel{grid-template-columns:1fr;padding-top:28px}.sqm-banner-main{min-height:320px}.sqm-banner-secondary{min-height:220px}}@media(max-width:520px){.sqm-benefits>div{padding:16px 12px;grid-template-columns:24px 1fr}.sqm-benefits span{font-size:17px}.sqm-benefits strong{font-size:10px}.products .product{flex-basis:calc(50vw - 26px)}.product-buttons{opacity:1!important;max-height:60px!important;transform:none!important}.sqm-cart-benefits{display:block}.sqm-cart-benefits span{display:block;margin-top:6px}.modal{padding:10px}.modal-box{padding:20px 15px!important}.product-detail{display:block!important}.detail-info{position:static}.sqm-market-nav{margin-inline:-16px;padding-inline:16px!important}}
+  </style>
 </head>
 <body>
 
-<header>
-  <button class="mobile-menu" onclick="toggleMobileNav()">☰</button>
+<header class="sqm-market-header">
+  <button class="mobile-menu" onclick="toggleMobileNav()" aria-label="Abrir menu">☰</button>
   <a class="logo" href="#home">SQM<small>STYLE QUALITY MODEL</small></a>
-  <nav id="mainNav">
-    <a href="#home">HOME</a>
-    <a href="#clothing">CLOTHING</a>
-    <span class="nav-collection" aria-label="Coleções">
-      <a class="nav-featured" href="feminino.html">FEMININO</a>
-      <a href="#clothing">MASCULINO</a>
-    </span>
-    <a href="#fragrance">FRAGRANCE</a>
-    <a href="#new">NEW ARRIVALS</a>
-    <a href="#about">ABOUT</a>
-    <a href="#contact">CONTACT</a>
+  <div class="sqm-header-search">
+    <label class="sr-only" for="searchInputTop">Buscar produtos</label>
+    <input id="searchInputTop" type="search" placeholder="Buscar roupas, perfumes..." oninput="searchProducts(this.value)">
+    <button type="button" onclick="focusSearch()" aria-label="Buscar">⌕</button>
+  </div>
+  <nav id="mainNav" class="sqm-market-nav">
+    <a href="#clothing">CATEGORIAS</a>
+    <a href="#offers">OFERTAS DO DIA</a>
+    <a href="#history">HISTÓRICO</a>
+    <a href="feminino.html">FEMININO</a>
+    <a href="#clothing">MASCULINO</a>
+    <a href="#contact">CONTATO</a>
   </nav>
   <div class="header-actions">
-    <button class="header-action search-btn" onclick="focusSearch()">SEARCH</button>
-    <button class="header-action" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
+    <button class="header-action search-btn" onclick="focusSearch()">BUSCAR</button>
+    <button class="header-action" onclick="toggleCart()">SACOLA (<span id="cartCount">0</span>)</button>
   </div>
 </header>
 
@@ -590,6 +595,18 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   <p>Estilo essencial para uma assinatura única.</p>
   <a class="btn" href="#clothing">EXPLORAR COLEÇÃO</a>
   </div>
+</section>
+
+<section class="sqm-benefits container" aria-label="Benefícios SQM">
+  <div><span>◌</span><strong>Até 12x no cartão</strong><small>Pagamento seguro</small></div>
+  <div><span>↗</span><strong>Frete expresso SQM</strong><small>Entrega acompanhada</small></div>
+  <div><span>✦</span><strong>Pix com desconto</strong><small>Condição exclusiva</small></div>
+  <div><span>✓</span><strong>Compra garantida</strong><small>Suporte especializado</small></div>
+</section>
+
+<section class="sqm-market-carousel container" id="offers" aria-label="Destaques da SQM">
+  <article class="sqm-banner sqm-banner-main"><div><span>COLEÇÃO 01 / 2026</span><h2>Seu estilo,<br>sem ruído.</h2><a href="#clothing">VER OFERTAS</a></div></article>
+  <article class="sqm-banner sqm-banner-secondary"><div><span>SELEÇÃO EDITORIAL</span><h2>Essenciais<br>com presença.</h2><a href="#new">EXPLORAR</a></div></article>
 </section>
 
 <section class="section container">
@@ -690,9 +707,11 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 <div class="drawer" id="cartDrawer">
   <div class="drawer-bg" onclick="toggleCart()"></div>
   <aside class="cart-panel">
-    <div class="cart-header"><h2>YOUR CART</h2><button class="close" onclick="toggleCart()">×</button></div>
+    <div class="cart-header"><div><span class="sqm-cart-kicker">SUA SELEÇÃO</span><h2>SACOLA</h2></div><button class="close" onclick="toggleCart()" aria-label="Fechar sacola">×</button></div>
+    <div class="sqm-shipping-progress"><div><span>Frete grátis SQM</span><strong>Adicione mais itens à sua seleção</strong></div><div class="sqm-progress-track"><span></span></div></div>
     <div id="cartItems"></div>
-    <div class="total"><span>TOTAL</span><span id="cartTotal">R$0,00</span></div>
+    <div class="sqm-cart-benefits"><span>✓ Compra garantida</span><span>↗ Envio acompanhado</span></div>
+    <div class="total"><span>TOTAL DA SELEÇÃO</span><span id="cartTotal">R$0,00</span></div>
     <button class="checkout" onclick="openCheckout()">CHECKOUT</button>
   </aside>
 </div>
