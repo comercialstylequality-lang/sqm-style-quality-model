@@ -625,8 +625,8 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   </div>
   <div class="categories">
     
-    <button class="category active" onclick="filterProducts('clothing',this)">CLOTHING</button>
-    <button class="category" onclick="filterProducts('fragrance',this)">FRAGRANCE</button>
+    <button class="category active" onclick="filterProducts('clothing',this)">ROUPAS</button>
+    <button class="category" onclick="filterProducts('fragrance',this)">PERFUMES</button>
     <button class="category" onclick="filterProducts('female',this)">FEMININO</button>
   <button class="category" onclick="filterProducts('male',this)">MASCULINO</button>
   <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
@@ -922,15 +922,8 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 <div class="toast" id="toast"></div>
 
 <script>
-const initialProducts=[
-{id:1,name:"Camiseta Básica Tech Insider",cost:166.25,price:166.25,category:"clothing",newArrival:true,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-3193860320-camiseta-basica-tech-insider-masculina-_JM"},
-{id:2,name:"Camiseta Manga Longa Básica 100% Algodão",cost:31.15,price:31.15,category:"clothing",newArrival:false,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-4211231565-camiseta-manga-longa-masculina-basica-100-algodo-camisa-_JM"},
-{id:3,name:"Kit 6 Camisetas Básicas Masculinas",cost:138.13,price:138.13,category:"clothing",newArrival:false,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-2775895319-6-camiseta-basica-masculina-camisa-lisa-cores-algodo-_JM"},
-{id:4,name:"Camiseta Básica Lisa 100% Algodão Premium",cost:43.65,price:43.65,category:"clothing",newArrival:true,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-3673537813-camiseta-masculina-basica-lisa-100-algodo-premium-_JM"},
-{id:5,name:"Camiseta Básica Tech Modal Anti-Odor",cost:45,price:45,category:"clothing",newArrival:true,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-5167782652-camiseta-masculina-anti-odor-tech-modal-basica-no-amassa-_JM"},
-{id:6,name:"Camiseta Básica Canelada Tricot Modal",cost:69.9,price:69.9,category:"clothing",newArrival:false,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-4421548667-camiseta-masculina-basica-canelada-manga-curta-tricot-modal-_JM"},
-{id:7,name:"Camiseta Básica Algodão Brasil 2026",cost:36.9,price:36.9,category:"clothing",newArrival:true,featured:false,active:true,stock:0,image:"",description:"",sizes:[],colors:[],supplier:"https://produto.mercadolivre.com.br/MLB-6241967020-camiseta-masculina-basica-algodo-brasil-copa-do-mundo-2026-_JM"}
-];
+  // Catálogo inicial intencionalmente vazio: novos produtos entram apenas pelo painel Admin.
+  const initialProducts=[];
 let products=initialProducts.map(p=>({...p}));
 let cart=[];
 let orders=[];
@@ -979,22 +972,23 @@ function renderAll(){
 updatePublicSizeFilter(true);
 renderProducts(activeProducts());renderFragrance();renderNew();renderCart();renderAdmin();renderCoupons();updateStats()
 }
-function renderProducts(list){document.getElementById("productGrid").innerHTML=list.length?list.map(productCard).join(""):"<p style='color:rgba(255,255,255,.72)'>Nenhum produto disponível.</p>"}
-function renderFragrance(){const l=activeProducts().filter(p=>p.category==="fragrance");document.getElementById("fragranceGrid").innerHTML=l.length?l.map(productCard).join(""):"<p style='color:#aaa'>Nenhuma fragrância cadastrada ainda.</p>"}
-function renderNew(){const l=activeProducts().filter(p=>p.newArrival);document.getElementById("newGrid").innerHTML=l.length?l.map(productCard).join(""):"<p style='color:rgba(255,255,255,.72)'>Nenhum New Arrival disponível.</p>"}
-function filterProducts(type,btn){
+  function emptyCatalogMessage(label, dark=false){return `<div class="catalog-empty"><strong>${label}</strong><span>Novidades selecionadas serão adicionadas em breve.</span></div>`}
+  function renderProducts(list){const clothing=list.filter(p=>p.category==='clothing');document.getElementById("productGrid").innerHTML=clothing.length?clothing.map(productCard).join(""):emptyCatalogMessage('Nenhuma roupa disponível')}
+  function renderFragrance(){const l=activeProducts().filter(p=>p.category==='fragrance');document.getElementById("fragranceGrid").innerHTML=l.length?l.map(productCard).join(""):emptyCatalogMessage('Nenhum perfume disponível',true)}
+  function renderNew(){const l=activeProducts().filter(p=>p.newArrival);document.getElementById("newGrid").innerHTML=l.length?l.map(productCard).join(""):emptyCatalogMessage('Nenhum lançamento disponível')}
+  function filterProducts(type,btn){
   document.querySelectorAll('.categories > .category').forEach(x=>x.classList.remove('active'));
   if(btn)btn.classList.add('active');
   document.querySelectorAll('.size-filter').forEach(x=>x.classList.remove('active'));
   updatePublicSizeFilter(type==='clothing');
   let l=activeProducts();
   if(type==='clothing')l=l.filter(p=>p.category==='clothing');
-  if(type==='fragrance')l=l.filter(p=>p.category==='fragrance');
-  if(type==='female')l=l.filter(p=>['female','unisex'].includes(p.gender||'unisex'));
-  if(type==='male')l=l.filter(p=>['male','unisex'].includes(p.gender||'unisex'));
-  if(type==='new')l=l.filter(p=>p.newArrival);
+  if(type==='fragrance'){document.getElementById('fragrance').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(type==='female')l=l.filter(p=>p.category==='clothing'&&['female','unisex'].includes(p.gender||'unisex'));
+  if(type==='male')l=l.filter(p=>p.category==='clothing'&&['male','unisex'].includes(p.gender||'unisex'));
+  if(type==='new')l=l.filter(p=>p.category==='clothing'&&p.newArrival);
   renderProducts(l);
-}
+  }
 function filterBySize(size,btn){document.querySelectorAll('.size-filter').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');document.querySelectorAll('.category').forEach(x=>x.classList.remove('active'));const clothingBtn=[...document.querySelectorAll('.category')].find(x=>x.textContent.trim()==='CLOTHING');if(clothingBtn)clothingBtn.classList.add('active');let l=activeProducts().filter(p=>p.category==='clothing');if(size!=='all')l=l.filter(p=>getAvailableSizes(p).includes(size));renderProducts(l)}
 function searchProducts(q){const l=activeProducts().filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));renderProducts(l)}
 function focusSearch(){const s=document.getElementById("searchInput");s.classList.remove("hidden");s.focus();s.scrollIntoView({behavior:"smooth",block:"center"})}
