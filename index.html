@@ -544,7 +544,10 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   <nav id="mainNav">
     <a href="#home">HOME</a>
     <a href="#clothing">CLOTHING</a>
-    <a class="nav-featured" href="feminino.html">FEMININO</a>
+    <span class="nav-collection" aria-label="Coleções">
+      <a class="nav-featured" href="feminino.html">FEMININO</a>
+      <a href="#clothing">MASCULINO</a>
+    </span>
     <a href="#fragrance">FRAGRANCE</a>
     <a href="#new">NEW ARRIVALS</a>
     <a href="#about">ABOUT</a>
@@ -552,7 +555,6 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   </nav>
   <div class="header-actions">
     <button class="header-action search-btn" onclick="focusSearch()">SEARCH</button>
-    <button class="header-action" onclick="openLogin()">ACCOUNT</button>
     <button class="header-action" onclick="toggleCart()">CART (<span id="cartCount">0</span>)</button>
   </div>
 </header>
