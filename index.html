@@ -535,6 +535,30 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 @media(max-width:600px){.sqm-newsletter{padding:75px 16px}.sqm-newsletter-form{display:flex;flex-direction:column;border-radius:18px;padding:7px}.sqm-newsletter-input-wrap{padding:0 13px}.sqm-newsletter-form button{width:100%;padding:14px}.sqm-newsletter p{font-size:13px}}
 </style>
 
+<style id="sqm-clarity-refresh">
+  :root{--sqm-ink:#151515;--sqm-muted:#6d6d70;--sqm-line:#e5e2dc;--sqm-surface:#fbfaf8;--sqm-accent:#9b7952}
+  body{background:var(--sqm-surface);color:var(--sqm-ink)}
+  header{background:rgba(251,250,248,.92);border-bottom-color:var(--sqm-line)}
+  .hero{min-height:min(760px,calc(100vh - 82px));background-position:center 42%}
+  .hero-content{max-width:1100px;padding-left:clamp(0px,3vw,44px)}
+  .hero .eyebrow{color:#e6cda9;letter-spacing:.28em}
+  .hero h1{font-size:clamp(68px,12vw,156px);letter-spacing:.12em;margin-bottom:18px}
+  .hero p{max-width:430px;font-size:clamp(16px,2vw,22px);line-height:1.5;letter-spacing:.08em;text-transform:none;margin-bottom:32px}
+  .btn{font-size:10px;letter-spacing:.16em;padding:16px 26px}
+  .section-head{align-items:flex-end}
+  .section-head h2{font-weight:800;letter-spacing:.06em}
+  .section-head p{max-width:440px;line-height:1.6;color:var(--sqm-muted)}
+  .editorial-card{min-height:500px}
+  .editorial-overlay h3{letter-spacing:.08em}
+  .categories{align-items:center}
+  .category{font-size:10px;letter-spacing:.1em}
+  .products{align-items:stretch}
+  .product-info h3{min-height:40px;line-height:1.4}
+  .product-buttons button{min-height:40px;font-size:9px;letter-spacing:.08em}
+  .newsletter{border-top:1px solid var(--sqm-line);border-bottom:1px solid var(--sqm-line)}
+  .newsletter h2{letter-spacing:.06em}
+  @media(max-width:650px){.hero-content{padding-left:0}.hero h1{letter-spacing:.08em}.hero p{letter-spacing:.04em}.section-head h2{letter-spacing:.03em}.product-info h3{min-height:0}}
+</style>
 </head>
 <body>
 
@@ -561,26 +585,26 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 
 <section class="hero" id="home">
   <div class="hero-content">
-    <div class="eyebrow">STYLE QUALITY MODEL</div>
-    <h1>SQM</h1>
-    <p>Your style. Your signature.</p>
-    <a class="btn" href="#clothing">SHOP NOW</a>
+<div class="eyebrow">STYLE QUALITY MODEL</div>
+  <h1>SQM</h1>
+  <p>Estilo essencial para uma assinatura única.</p>
+  <a class="btn" href="#clothing">EXPLORAR COLEÇÃO</a>
   </div>
 </section>
 
 <section class="section container">
   <div class="section-head">
-    <div><h2>THE SQM EDIT</h2><p>Selected pieces for a distinct signature.</p></div>
+    <div><h2>O EDITAL SQM</h2><p>Peças selecionadas para construir uma assinatura distinta.</p></div>
   </div>
   <div class="editorial">
-    <a class="editorial-card" href="#clothing"><div class="editorial-overlay"><h3>CLOTHING</h3><p>Essential pieces. Elevated style.</p></div></a>
-    <a class="editorial-card" href="#fragrance"><div class="editorial-overlay"><h3>FRAGRANCE</h3><p>A future collection prepared for SQM.</p></div></a>
+<a class="editorial-card" href="#clothing"><div class="editorial-overlay"><h3>ROUPAS</h3><p>Peças essenciais. Estilo elevado.</p></div></a>
+  <a class="editorial-card" href="#fragrance"><div class="editorial-overlay"><h3>FRAGRÂNCIAS</h3><p>Uma coleção futura preparada para a SQM.</p></div></a>
   </div>
 </section>
 
 <section class="section container" id="clothing">
   <div class="section-head">
-    <div><h2>CLOTHING</h2><p>Explore the current SQM selection.</p></div>
+    <div><h2>ROUPAS</h2><p>Explore a seleção atual da SQM.</p></div>
   </div>
   <div class="categories">
     
@@ -596,7 +620,7 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
 <section class="section dark-section" id="fragrance">
   <div class="container">
     <div class="section-head">
-      <div><h2>FRAGRANCE</h2><p>Collection structure ready for future SQM fragrances.</p></div>
+      <div><h2>FRAGRÂNCIAS</h2><p>Uma coleção em preparação para futuras fragrâncias SQM.</p></div>
     </div>
     <div class="products" id="fragranceGrid"></div>
   </div>
