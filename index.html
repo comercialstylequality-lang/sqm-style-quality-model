@@ -575,8 +575,9 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
     <button type="button" onclick="focusSearch()" aria-label="Buscar">⌕</button>
   </div>
   <nav id="mainNav" class="sqm-market-nav">
-    <a href="#clothing">CATEGORIAS</a>
-    <a href="#offers">OFERTAS DO DIA</a>
+  <a href="#clothing">ROUPAS</a>
+  <a href="#fragrance">FRAGRÂNCIAS</a>
+  <a href="#offers">OFERTAS DO DIA</a>
     <a href="#history">HISTÓRICO</a>
     <a href="#clothing" onclick="filterProducts('female',this)">FEMININO</a>
     <a href="#clothing" onclick="filterProducts('male',this)">MASCULINO</a>
@@ -629,7 +630,6 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   </div>
   <div class="categories" aria-label="Categorias da coleção">
     <button class="category active" onclick="filterProducts('clothing',this)">ROUPAS</button>
-    <button class="category" onclick="filterProducts('fragrance',this)">PERFUMES</button>
     <button class="category" onclick="filterProducts('new',this)">NEW ARRIVALS</button>
     <div class="size-filter-wrap hidden" id="sizeFilterWrap"><span class="size-filter-label">TAMANHO DA ROUPA:</span><div id="sizeFilterTabs" class="size-filter-tabs"><button class="category size-filter" onclick="filterBySize('P',this)">P</button><button class="category size-filter" onclick="filterBySize('M',this)">M</button><button class="category size-filter" onclick="filterBySize('G',this)">G</button><button class="category size-filter" onclick="filterBySize('GG',this)">GG</button></div></div>
   </div>
@@ -637,10 +637,10 @@ footer{padding:55px clamp(18px,4vw,60px);position:relative}.admin-access{display
   <div class="products" id="productGrid"></div>
 </section>
 
-<section class="section dark-section" id="fragrance">
+  <section class="section dark-section fragrance-section" id="fragrance">
   <div class="container">
     <div class="section-head">
-      <div><h2>FRAGRÂNCIAS</h2><p>Uma coleção em preparação para futuras fragrâncias SQM.</p></div>
+      <div><div class="eyebrow">SQM / SEGUNDA COLEÇÃO</div><h2>FRAGRÂNCIAS</h2><p>Uma coleção independente, separada das roupas, para futuras fragrâncias SQM.</p></div>
     </div>
     <div class="products" id="fragranceGrid"></div>
   </div>
